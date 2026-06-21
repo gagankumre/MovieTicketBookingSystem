@@ -3,8 +3,12 @@ package com.example.movieticket.web;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.example.movieticket.repository.BookingRepository;
+import com.example.movieticket.repository.BookingSeatRepository;
 import com.example.movieticket.repository.CityRepository;
+import com.example.movieticket.repository.DiscountCodeRepository;
 import com.example.movieticket.repository.MovieRepository;
+import com.example.movieticket.repository.PaymentRepository;
 import com.example.movieticket.repository.ScreenRepository;
 import com.example.movieticket.repository.SeatHoldRepository;
 import com.example.movieticket.repository.SeatRepository;
@@ -41,9 +45,20 @@ abstract class AbstractCatalogIT extends AbstractApiIT {
     protected ShowSeatRepository showSeatRepository;
     @Autowired
     protected SeatHoldRepository seatHoldRepository;
+    @Autowired
+    protected BookingSeatRepository bookingSeatRepository;
+    @Autowired
+    protected PaymentRepository paymentRepository;
+    @Autowired
+    protected BookingRepository bookingRepository;
+    @Autowired
+    protected DiscountCodeRepository discountCodeRepository;
 
     @BeforeEach
     void resetCatalog() {
+        bookingSeatRepository.deleteAll();
+        paymentRepository.deleteAll();
+        bookingRepository.deleteAll();
         showSeatRepository.deleteAll();
         seatHoldRepository.deleteAll();
         showRepository.deleteAll();
@@ -51,6 +66,7 @@ abstract class AbstractCatalogIT extends AbstractApiIT {
         screenRepository.deleteAll();
         theaterRepository.deleteAll();
         movieRepository.deleteAll();
+        discountCodeRepository.deleteAll();
         cityRepository.deleteAll();
         userRepository.deleteAll();
         seedAdmin();

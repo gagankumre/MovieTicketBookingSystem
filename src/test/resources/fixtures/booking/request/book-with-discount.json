@@ -1,0 +1,5 @@
+{
+  "holdId": ${holdId},
+  "discountCode": "SAVE10",
+  "paymentMethod": "CARD"
+}

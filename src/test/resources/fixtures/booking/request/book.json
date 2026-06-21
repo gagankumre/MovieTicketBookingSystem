@@ -1,0 +1,4 @@
+{
+  "holdId": ${holdId},
+  "paymentMethod": "CARD"
+}

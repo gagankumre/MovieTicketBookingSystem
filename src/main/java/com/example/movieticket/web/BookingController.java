@@ -1,6 +1,9 @@
 package com.example.movieticket.web;
 
+import com.example.movieticket.service.BookingService;
 import com.example.movieticket.service.HoldService;
+import com.example.movieticket.web.dto.BookingRequest;
+import com.example.movieticket.web.dto.BookingResponse;
 import com.example.movieticket.web.dto.HoldRequest;
 import com.example.movieticket.web.dto.HoldResponse;
 import jakarta.validation.Valid;
@@ -25,11 +28,19 @@ import org.springframework.web.bind.annotation.RestController;
 public class BookingController {
 
     private final HoldService holdService;
+    private final BookingService bookingService;
 
     @PostMapping("/holds")
     @ResponseStatus(HttpStatus.CREATED)
     public HoldResponse hold(@AuthenticationPrincipal String email, @Valid @RequestBody HoldRequest request) {
         return holdService.holdSeats(email, request.getShowId(), request.getSeatIds());
+    }
+
+    @PostMapping("/bookings")
+    @ResponseStatus(HttpStatus.CREATED)
+    public BookingResponse book(@AuthenticationPrincipal String email, @Valid @RequestBody BookingRequest request) {
+        return bookingService.confirmBooking(email, request.getHoldId(),
+                request.getDiscountCode(), request.getPaymentMethod());
     }
 
     @DeleteMapping("/holds/{holdId}")

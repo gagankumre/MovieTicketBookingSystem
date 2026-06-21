@@ -1,0 +1,17 @@
+# Template for local development overrides.
+# Copy to `application-local.properties` (git-ignored) and edit for your machine.
+# Activate with one of:
+#   SPRING_PROFILES_ACTIVE=local mvn spring-boot:run
+#   mvn spring-boot:run -Dspring-boot.run.profiles=local
+# Values here override application.yml only when the 'local' profile is active.
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/movieticket
+spring.datasource.username=postgres
+spring.datasource.password=
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+
+logging.level.com.example.movieticket=DEBUG
+logging.level.org.hibernate.SQL=DEBUG
+logging.level.org.hibernate.orm.jdbc.bind=TRACE

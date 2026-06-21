@@ -67,6 +67,10 @@ specification**. All code we write must conform to them.
 - **OOP + clean code.** Follow standard object-oriented design (encapsulation, single
   responsibility, clear interfaces, favour composition) and clean-code practices: intention-
   revealing names, small focused methods, no duplication, no dead code, minimal surface area.
+- **No unnecessary comments.** Let clear names and small methods carry the meaning. Comment only
+  what the code can't say itself — non-obvious *why*, tricky invariants, the concurrency rationale.
+  No narration of obvious lines, no commented-out code, no redundant Javadoc that restates the
+  signature.
 - **Always look at the bigger picture.** Before writing or changing code, actively review the
   existing code and understand its relationships with the rest of the system — who calls it, what
   it depends on, what depends on it. Never edit a piece in isolation.
@@ -122,6 +126,18 @@ specification**. All code we write must conform to them.
   map for validation failures. Status mapping per `PLAN.md` (409 seat/hold conflict, 402 payment,
   404 not-found, 400 validation, 401/403 auth).
 
+**Configuration**
+- **Externalize every config value** — no magic numbers/strings hardcoded for things like hold TTL,
+  sweeper interval, JWT secret/expiry, refund defaults, pricing knobs.
+- **Every time a new config is added, add the variable and its value to the base config file**
+  (`application.yml`). Bind it via `@ConfigurationProperties`/`@Value`, give it a sensible default,
+  and keep `application.yml` the single place all tunables are declared.
+- Profiles: `application.yml` = base (Postgres defaults); `application-test.yml` = H2 for automated
+  tests; `application-local.properties` = editable per-developer local overrides (`local` profile,
+  **git-ignored**) — the committed template is `application-local.properties.example`. When a new
+  tunable matters for local runs or tests, mirror it into the test profile and the
+  `.example` template (never edit a developer's ignored local file).
+
 **Persistence**
 - IDs: `GenerationType.IDENTITY`.
 - Money: `BigDecimal`, scale 2 — never `double`/`float`.
@@ -150,8 +166,12 @@ specification**. All code we write must conform to them.
 - Inject via **constructor injection only** (no field `@Autowired`); Lombok used freely
   (`@RequiredArgsConstructor`, etc.). Be careful with bidirectional entity relationships under
   `@Data`/`@ToString` (avoid recursion / lazy-loading traps).
-- Log via **SLF4J**; **never log** passwords, JWTs, or full payment data. INFO for flow
-  milestones, DEBUG for detail, WARN/ERROR for problems.
+- Log via **SLF4J** (`@Slf4j`); add **rich logging wherever it adds value** — entry/exit of
+  meaningful flows (hold, book, cancel, payment, refund), seat-status transitions, expiry sweeps,
+  async notification dispatch, and all caught/translated exceptions. Use parameterized logging
+  (`log.info("...{}...", id)`), never string concatenation. Levels: INFO for flow milestones,
+  DEBUG for detail, WARN for recoverable issues, ERROR for failures. **Never log** passwords,
+  JWTs, or full payment data.
 
 **Test naming**
 - Unit tests: `*Test` (run by Surefire). Integration tests: `*IT` (run by Failsafe). Keeps fast

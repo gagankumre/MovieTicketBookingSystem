@@ -67,6 +67,13 @@ configurable TTL), `DELETE holds/{id}` (release own hold), `POST bookings`
 seats). Payment uses a mock gateway; `paymentMethod=DECLINE` forces a 402 to exercise the failure
 path.
 
+## Notifications
+Confirmation and cancellation notifications use a **transactional outbox**: the booking transaction
+writes a `PENDING` row (durable, atomic, non-blocking), and a `@Scheduled` dispatcher sends them
+off-thread and retries failures up to a max-attempts cap. A separate scheduled job enqueues
+de-duplicated pre-show reminders for confirmed bookings within a lead window. The sender is a
+logging stub in place of a real email/SMS provider.
+
 ## Concurrency
 Seat occupancy lives on a single `ShowSeat` row per (show, seat). Holds/bookings acquire a
 pessimistic write lock (`SELECT … FOR UPDATE`, id-ordered) before transitioning status, so

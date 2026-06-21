@@ -22,6 +22,7 @@ import com.example.movieticket.exception.HoldExpiredException;
 import com.example.movieticket.exception.PaymentFailedException;
 import com.example.movieticket.exception.UnauthorizedActionException;
 import com.example.movieticket.mapper.BookingMapperImpl;
+import com.example.movieticket.notification.NotificationService;
 import com.example.movieticket.payment.PaymentGateway;
 import com.example.movieticket.payment.PaymentResult;
 import com.example.movieticket.repository.BookingRepository;
@@ -71,6 +72,8 @@ class BookingServiceTest {
     private RefundService refundService;
     @Mock
     private RefundRepository refundRepository;
+    @Mock
+    private NotificationService notificationService;
 
     private BookingService bookingService;
 
@@ -83,7 +86,8 @@ class BookingServiceTest {
     void setUp() {
         bookingService = new BookingService(seatHoldRepository, showSeatRepository, seatLockManager,
                 discountService, paymentGateway, bookingRepository, bookingSeatRepository,
-                paymentRepository, userRepository, refundService, refundRepository, new BookingMapperImpl());
+                paymentRepository, userRepository, refundService, refundRepository,
+                notificationService, new BookingMapperImpl());
     }
 
     private SeatHold activeHold() {

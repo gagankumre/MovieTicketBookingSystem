@@ -2,6 +2,7 @@ package com.example.movieticket.security;
 
 import com.example.movieticket.config.AdminProperties;
 import com.example.movieticket.config.HoldProperties;
+import com.example.movieticket.config.NotificationProperties;
 import com.example.movieticket.domain.enums.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -25,7 +26,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * </ul>
  */
 @Configuration
-@EnableConfigurationProperties({JwtProperties.class, AdminProperties.class, HoldProperties.class})
+@EnableConfigurationProperties({JwtProperties.class, AdminProperties.class, HoldProperties.class,
+        NotificationProperties.class})
 @RequiredArgsConstructor
 public class SecurityConfig {
 

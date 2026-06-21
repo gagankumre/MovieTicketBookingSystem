@@ -14,3 +14,12 @@ spring:
         format_sql: true
         jdbc:
           time_zone: UTC
+
+# Effectively disable the scheduled jobs during tests; the services are invoked directly so
+# expiry/dispatch/reminders stay deterministic.
+app:
+  hold:
+    sweep-interval-ms: 3600000
+  notification:
+    dispatch-interval-ms: 3600000
+    reminder-interval-ms: 3600000

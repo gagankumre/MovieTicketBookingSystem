@@ -35,6 +35,11 @@ app:
     ttl-minutes: ${APP_HOLD_TTL_MINUTES:5}
     # How often the sweeper scans for and releases expired holds.
     sweep-interval-ms: ${APP_HOLD_SWEEP_INTERVAL_MS:60000}
+  notification:
+    dispatch-interval-ms: ${APP_NOTIFICATION_DISPATCH_INTERVAL_MS:10000}
+    reminder-interval-ms: ${APP_NOTIFICATION_REMINDER_INTERVAL_MS:300000}
+    reminder-lead-minutes: ${APP_NOTIFICATION_REMINDER_LEAD_MINUTES:60}
+    max-attempts: ${APP_NOTIFICATION_MAX_ATTEMPTS:5}
 
 logging:
   level:

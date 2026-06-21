@@ -17,6 +17,7 @@ import com.example.movieticket.exception.ResourceNotFoundException;
 import com.example.movieticket.exception.SeatUnavailableException;
 import com.example.movieticket.exception.UnauthorizedActionException;
 import com.example.movieticket.mapper.BookingMapper;
+import com.example.movieticket.notification.NotificationService;
 import com.example.movieticket.payment.PaymentGateway;
 import com.example.movieticket.payment.PaymentResult;
 import com.example.movieticket.repository.BookingRepository;
@@ -54,6 +55,7 @@ public class BookingService {
     private final UserRepository userRepository;
     private final RefundService refundService;
     private final RefundRepository refundRepository;
+    private final NotificationService notificationService;
     private final BookingMapper bookingMapper;
 
     /**
@@ -113,6 +115,7 @@ public class BookingService {
         }
         bookingSeatRepository.saveAll(bookingSeats);
         hold.casStatus(HoldStatus.ACTIVE, HoldStatus.CONVERTED);
+        notificationService.enqueueBookingConfirmation(booking);
 
         log.info("Confirmed booking id={} from hold {} total={}", booking.getId(), holdId, total);
         return toResponse(booking, bookingSeats, payment);
@@ -151,6 +154,7 @@ public class BookingService {
         }
         Refund refund = refundRepository.save(new Refund(booking, refundAmount, now));
         booking.casStatus(BookingStatus.CONFIRMED, BookingStatus.CANCELLED);
+        notificationService.enqueueBookingCancellation(booking);
 
         log.info("Cancelled booking {} refund={}", bookingId, refundAmount);
         return CancellationResponse.builder()

@@ -4,7 +4,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.example.movieticket.repository.CityRepository;
+import com.example.movieticket.repository.MovieRepository;
 import com.example.movieticket.repository.ScreenRepository;
+import com.example.movieticket.repository.SeatRepository;
+import com.example.movieticket.repository.ShowRepository;
+import com.example.movieticket.repository.ShowSeatRepository;
 import com.example.movieticket.repository.TheaterRepository;
 import com.example.movieticket.support.JsonFixtures;
 import java.util.Map;
@@ -16,7 +20,7 @@ import org.springframework.http.MediaType;
  * Catalog integration-test base. Resets the whole catalog hierarchy (child → parent) and re-seeds
  * the admin before each test — the shared H2 instance is reused across test classes, so cleanup
  * must cover the full hierarchy to avoid foreign-key violations. Also exposes helpers that build
- * the city → theater → screen chain via the admin API.
+ * the city → theater → screen → seats / movie chain via the admin API.
  */
 abstract class AbstractCatalogIT extends AbstractApiIT {
 
@@ -26,43 +30,57 @@ abstract class AbstractCatalogIT extends AbstractApiIT {
     protected TheaterRepository theaterRepository;
     @Autowired
     protected ScreenRepository screenRepository;
+    @Autowired
+    protected SeatRepository seatRepository;
+    @Autowired
+    protected MovieRepository movieRepository;
+    @Autowired
+    protected ShowRepository showRepository;
+    @Autowired
+    protected ShowSeatRepository showSeatRepository;
 
     @BeforeEach
     void resetCatalog() {
+        showSeatRepository.deleteAll();
+        showRepository.deleteAll();
+        seatRepository.deleteAll();
         screenRepository.deleteAll();
         theaterRepository.deleteAll();
+        movieRepository.deleteAll();
         cityRepository.deleteAll();
         userRepository.deleteAll();
         seedAdmin();
     }
 
     protected long createCity(String token) throws Exception {
-        String response = mockMvc.perform(post("/api/admin/cities")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(JsonFixtures.read("city/request/create-city.json")))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-        return idOf(response);
+        return idOf(adminPost("/api/admin/cities", token, JsonFixtures.read("city/request/create-city.json")));
     }
 
     protected long createTheater(String token, long cityId) throws Exception {
-        String response = mockMvc.perform(post("/api/admin/theaters")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(JsonFixtures.read("theater/request/create-theater.json", Map.of("cityId", cityId))))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-        return idOf(response);
+        return idOf(adminPost("/api/admin/theaters", token,
+                JsonFixtures.read("theater/request/create-theater.json", Map.of("cityId", cityId))));
     }
 
     protected long createScreen(String token, long theaterId) throws Exception {
-        String response = mockMvc.perform(post("/api/admin/screens")
+        return idOf(adminPost("/api/admin/screens", token,
+                JsonFixtures.read("screen/request/create-screen.json", Map.of("theaterId", theaterId))));
+    }
+
+    protected long createMovie(String token) throws Exception {
+        return idOf(adminPost("/api/admin/movies", token, JsonFixtures.read("movie/request/create-movie.json")));
+    }
+
+    protected void defineLayout(String token, long screenId) throws Exception {
+        adminPost("/api/admin/screens/" + screenId + "/seats", token,
+                JsonFixtures.read("seatlayout/request/define-layout.json"));
+    }
+
+    private String adminPost(String path, String token, String body) throws Exception {
+        return mockMvc.perform(post(path)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(JsonFixtures.read("screen/request/create-screen.json", Map.of("theaterId", theaterId))))
+                        .content(body))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
-        return idOf(response);
     }
 }

@@ -48,9 +48,13 @@ Auth (JWT):
 - `POST /api/auth/login` — `{email, password}` → 200 `{token, tokenType, expiresInMinutes}`.
 
 Authorization (path-based RBAC, `Authorization: Bearer <token>`):
-- `/api/admin/**` — ADMIN only (e.g. `POST /api/admin/cities`).
-- `/api/public/**` — browse GETs open (e.g. `GET /api/public/cities`); customer write actions
-  require a valid token.
+- `/api/admin/**` — ADMIN only.
+- `/api/public/**` — browse GETs open; customer write actions require a valid token.
+
+Admin catalog (`/api/admin`, ADMIN): `POST cities`, `POST theaters`, `POST screens` +
+`GET screens?theaterId=`, `POST screens/{id}/seats` (bulk layout), `POST movies`,
+`POST shows` (publishes the show and generates a priced seat per screen seat).
+Public browse (`/api/public`): `GET cities`, `GET theaters?cityId=`, `GET movies`.
 
 Errors use a consistent body: `{timestamp, status, error, message, path, fieldErrors}`.
 

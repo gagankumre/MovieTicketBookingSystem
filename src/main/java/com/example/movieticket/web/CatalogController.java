@@ -1,8 +1,10 @@
 package com.example.movieticket.web;
 
 import com.example.movieticket.service.CityService;
+import com.example.movieticket.service.MovieService;
 import com.example.movieticket.service.TheaterService;
 import com.example.movieticket.web.dto.CityResponse;
+import com.example.movieticket.web.dto.MovieResponse;
 import com.example.movieticket.web.dto.TheaterResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ public class CatalogController {
 
     private final CityService cityService;
     private final TheaterService theaterService;
+    private final MovieService movieService;
 
     @GetMapping("/cities")
     public List<CityResponse> listCities() {
@@ -31,5 +34,10 @@ public class CatalogController {
     @GetMapping("/theaters")
     public List<TheaterResponse> listTheaters(@RequestParam(required = false) Long cityId) {
         return theaterService.list(cityId);
+    }
+
+    @GetMapping("/movies")
+    public List<MovieResponse> listMovies() {
+        return movieService.list();
     }
 }

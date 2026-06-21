@@ -1,0 +1,12 @@
+{
+  "id": 0,
+  "screenId": 0,
+  "screenName": "Audi 1",
+  "movieId": 0,
+  "movieTitle": "Inception",
+  "startTime": "2026-07-01T10:00:00Z",
+  "endTime": "2026-07-01T12:28:00Z",
+  "showType": "REGULAR",
+  "basePrice": 200.00,
+  "totalSeats": 5
+}

@@ -1,0 +1,7 @@
+{
+  "screenId": ${screenId},
+  "movieId": ${movieId},
+  "startTime": "2026-07-01T10:00:00Z",
+  "showType": "REGULAR",
+  "basePrice": 200.00
+}

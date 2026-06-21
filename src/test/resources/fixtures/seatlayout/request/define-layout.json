@@ -1,0 +1,6 @@
+{
+  "rows": [
+    { "rowLabel": "A", "seatCount": 3, "category": "REGULAR" },
+    { "rowLabel": "B", "seatCount": 2, "category": "PREMIUM" }
+  ]
+}

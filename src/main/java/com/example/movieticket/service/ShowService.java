@@ -19,12 +19,16 @@ import com.example.movieticket.repository.ShowSeatRepository;
 import com.example.movieticket.web.dto.SeatView;
 import com.example.movieticket.web.dto.ShowResponse;
 import com.example.movieticket.web.dto.ShowSummaryResponse;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Predicate;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
+import org.springframework.data.jpa.domain.Specification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -82,7 +86,35 @@ public class ShowService {
     public List<ShowSummaryResponse> browse(Long cityId, Long movieId, LocalDate date) {
         Instant from = date == null ? null : date.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant to = date == null ? null : date.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
-        return showMapper.toSummaryList(showRepository.search(cityId, movieId, from, to));
+        return showMapper.toSummaryList(showRepository.findAll(showFilter(cityId, movieId, from, to)));
+    }
+
+    /**
+     * Dynamic filter: only present criteria become predicates (no null bind parameters, which
+     * PostgreSQL cannot type), and the show's associations are fetch-joined to avoid N+1.
+     */
+    private Specification<Show> showFilter(Long cityId, Long movieId, Instant from, Instant to) {
+        return (root, query, cb) -> {
+            Join<?, ?> screen = (Join<?, ?>) root.fetch("screen");
+            Join<?, ?> theater = (Join<?, ?>) screen.fetch("theater");
+            Join<?, ?> city = (Join<?, ?>) theater.fetch("city");
+            Join<?, ?> movie = (Join<?, ?>) root.fetch("movie");
+            List<Predicate> predicates = new ArrayList<>();
+            if (cityId != null) {
+                predicates.add(cb.equal(city.get("id"), cityId));
+            }
+            if (movieId != null) {
+                predicates.add(cb.equal(movie.get("id"), movieId));
+            }
+            if (from != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("startTime"), from));
+            }
+            if (to != null) {
+                predicates.add(cb.lessThan(root.get("startTime"), to));
+            }
+            query.orderBy(cb.asc(root.get("startTime")));
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
     }
 
     @Transactional(readOnly = true)

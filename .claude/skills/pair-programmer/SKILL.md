@@ -95,6 +95,12 @@ them as something to improve, not just obey:
 - **OOP + clean code.** Follow standard object-oriented design (encapsulation, single
   responsibility, clear interfaces, favour composition) and clean-code practices: intention-
   revealing names, small focused methods, no duplication, no dead code, minimal surface area.
+- **No hardcoding — use existing enums and named constants.** Never write a literal that a domain
+  enum or constant already expresses: use `Role.ADMIN.name()`, not `"ADMIN"`; reference enum
+  values, `HttpStatus` constants, and config properties instead of magic strings/numbers.
+  Centralize repeated literals (claim keys, prefixes, token types) as `private static final`
+  constants. **Proactively** scan for hardcoding whenever you touch nearby code and fix it — don't
+  leave it because it "works".
 - **No unnecessary comments.** Let clear names and small methods carry the meaning. Comment only
   what the code can't say itself — non-obvious *why*, tricky invariants, the concurrency rationale.
   No narration of obvious lines, no commented-out code, no redundant Javadoc that restates the

@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Map;
 import org.skyscreamer.jsonassert.Customization;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
@@ -19,6 +20,18 @@ public final class JsonFixtures {
     private static final String BASE = "fixtures/";
 
     private JsonFixtures() {
+    }
+
+    /**
+     * Reads a fixture and substitutes {@code ${key}} placeholders with the given values — for
+     * request bodies that reference dynamic ids (e.g. a foreign key created earlier in the test).
+     */
+    public static String read(String relativePath, Map<String, Object> values) {
+        String content = read(relativePath);
+        for (Map.Entry<String, Object> entry : values.entrySet()) {
+            content = content.replace("${" + entry.getKey() + "}", String.valueOf(entry.getValue()));
+        }
+        return content;
     }
 
     /** Reads a fixture, e.g. {@code read("auth/request/register-valid.json")}. */

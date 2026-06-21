@@ -20,6 +20,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class JwtService {
 
+    private static final String CLAIM_ROLE = "role";
+    private static final String CLAIM_USER_ID = "uid";
+    private static final String AUTHORITY_PREFIX = "ROLE_";
+
     private final SecretKey signingKey;
     private final long expirationMinutes;
 
@@ -34,8 +38,8 @@ public class JwtService {
         log.debug("Issuing JWT for user id={} role={}", user.getId(), user.getRole());
         return Jwts.builder()
                 .subject(user.getEmail())
-                .claim("role", user.getRole().name())
-                .claim("uid", user.getId())
+                .claim(CLAIM_ROLE, user.getRole().name())
+                .claim(CLAIM_USER_ID, user.getId())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
                 .signWith(signingKey)
@@ -58,8 +62,8 @@ public class JwtService {
                 .parseSignedClaims(token)
                 .getPayload();
         String email = claims.getSubject();
-        String role = claims.get("role", String.class);
-        var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+        String role = claims.get(CLAIM_ROLE, String.class);
+        var authorities = List.of(new SimpleGrantedAuthority(AUTHORITY_PREFIX + role));
         return new UsernamePasswordAuthenticationToken(email, null, authorities);
     }
 }

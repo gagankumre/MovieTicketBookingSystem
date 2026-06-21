@@ -4,6 +4,7 @@ import com.example.movieticket.domain.User;
 import com.example.movieticket.domain.enums.Role;
 import com.example.movieticket.exception.EmailAlreadyExistsException;
 import com.example.movieticket.exception.InvalidCredentialsException;
+import com.example.movieticket.mapper.UserMapper;
 import com.example.movieticket.repository.UserRepository;
 import com.example.movieticket.security.JwtService;
 import com.example.movieticket.web.dto.AuthResponse;
@@ -25,6 +26,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final UserMapper userMapper;
 
     /** Self-registration always creates a CUSTOMER; admin accounts are provisioned separately. */
     @Transactional
@@ -36,11 +38,7 @@ public class AuthService {
         User user = new User(normalizedEmail, passwordEncoder.encode(rawPassword), Role.CUSTOMER);
         User saved = userRepository.save(user);
         log.info("Registered user id={} role={}", saved.getId(), saved.getRole());
-        return UserResponse.builder()
-                .id(saved.getId())
-                .email(saved.getEmail())
-                .role(saved.getRole().name())
-                .build();
+        return userMapper.toResponse(saved);
     }
 
     @Transactional(readOnly = true)

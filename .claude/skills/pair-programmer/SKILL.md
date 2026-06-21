@@ -156,8 +156,12 @@ them as something to improve, not just obey:
 **DTOs & mapping**
 - Request/response DTOs are **classes** (Lombok `@Value`/`@Builder` for responses, validated
   request DTOs as needed).
-- Entity ↔ DTO mapping via **MapStruct** (compile-time generated mappers in `web/` or a `mapper/`
-  package).
+- **All entity ↔ DTO mapping goes through MapStruct mappers** in the `mapper/` package
+  (`@Mapper(componentModel = "spring")`), injected into services. **Never hand-write
+  builder/`toResponse(...)` mapping in services** — that boilerplate belongs in a mapper interface
+  (use `@Mapping` for flattened nested fields; MapStruct maps enums→String and lists
+  automatically). **Proactively**: whenever you see a manual builder mapping an entity to a DTO,
+  move it into the relevant mapper and delete the hand-rolled code.
 
 **API design**
 - REST URLs use **plural nouns** under `/api` (e.g. `/api/shows/{id}/seats`); HTTP verbs convey

@@ -4,6 +4,7 @@ import com.example.movieticket.domain.City;
 import com.example.movieticket.domain.Theater;
 import com.example.movieticket.exception.DuplicateResourceException;
 import com.example.movieticket.exception.ResourceNotFoundException;
+import com.example.movieticket.mapper.TheaterMapper;
 import com.example.movieticket.repository.CityRepository;
 import com.example.movieticket.repository.TheaterRepository;
 import com.example.movieticket.web.dto.TheaterResponse;
@@ -21,6 +22,7 @@ public class TheaterService {
 
     private final TheaterRepository theaterRepository;
     private final CityRepository cityRepository;
+    private final TheaterMapper theaterMapper;
 
     @Transactional
     public TheaterResponse create(Long cityId, String name, String address) {
@@ -33,7 +35,7 @@ public class TheaterService {
         }
         Theater saved = theaterRepository.save(new Theater(city, trimmedName, address.trim()));
         log.info("Created theater id={} cityId={}", saved.getId(), cityId);
-        return toResponse(saved);
+        return theaterMapper.toResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -41,16 +43,6 @@ public class TheaterService {
         List<Theater> theaters = cityId == null
                 ? theaterRepository.findAll(Sort.by("name"))
                 : theaterRepository.findByCityIdOrderByNameAsc(cityId);
-        return theaters.stream().map(this::toResponse).toList();
-    }
-
-    private TheaterResponse toResponse(Theater theater) {
-        return TheaterResponse.builder()
-                .id(theater.getId())
-                .cityId(theater.getCity().getId())
-                .cityName(theater.getCity().getName())
-                .name(theater.getName())
-                .address(theater.getAddress())
-                .build();
+        return theaterMapper.toResponseList(theaters);
     }
 }

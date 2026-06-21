@@ -10,6 +10,7 @@ import com.example.movieticket.domain.Screen;
 import com.example.movieticket.domain.Theater;
 import com.example.movieticket.exception.DuplicateResourceException;
 import com.example.movieticket.exception.ResourceNotFoundException;
+import com.example.movieticket.mapper.ScreenMapperImpl;
 import com.example.movieticket.repository.ScreenRepository;
 import com.example.movieticket.repository.TheaterRepository;
 import com.example.movieticket.support.factory.CityFactory;
@@ -18,9 +19,9 @@ import com.example.movieticket.support.factory.TheaterFactory;
 import com.example.movieticket.web.dto.ScreenResponse;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -32,8 +33,12 @@ class ScreenServiceTest {
     @Mock
     private TheaterRepository theaterRepository;
 
-    @InjectMocks
     private ScreenService screenService;
+
+    @BeforeEach
+    void setUp() {
+        screenService = new ScreenService(screenRepository, theaterRepository, new ScreenMapperImpl());
+    }
 
     private final City city = CityFactory.withId(3L, CityFactory.city("Bengaluru"));
     private final Theater theater = TheaterFactory.withId(5L, TheaterFactory.theater(city, "PVR Forum"));

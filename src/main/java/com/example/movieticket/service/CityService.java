@@ -2,6 +2,7 @@ package com.example.movieticket.service;
 
 import com.example.movieticket.domain.City;
 import com.example.movieticket.exception.DuplicateResourceException;
+import com.example.movieticket.mapper.CityMapper;
 import com.example.movieticket.repository.CityRepository;
 import com.example.movieticket.web.dto.CityResponse;
 import java.util.List;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CityService {
 
     private final CityRepository cityRepository;
+    private final CityMapper cityMapper;
 
     @Transactional
     public CityResponse create(String name) {
@@ -26,15 +28,11 @@ public class CityService {
         }
         City saved = cityRepository.save(new City(trimmed));
         log.info("Created city id={} name={}", saved.getId(), saved.getName());
-        return toResponse(saved);
+        return cityMapper.toResponse(saved);
     }
 
     @Transactional(readOnly = true)
     public List<CityResponse> list() {
-        return cityRepository.findAll(Sort.by("name")).stream().map(this::toResponse).toList();
-    }
-
-    private CityResponse toResponse(City city) {
-        return CityResponse.builder().id(city.getId()).name(city.getName()).build();
+        return cityMapper.toResponseList(cityRepository.findAll(Sort.by("name")));
     }
 }

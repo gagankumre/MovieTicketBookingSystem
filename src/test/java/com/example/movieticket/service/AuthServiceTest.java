@@ -10,15 +10,16 @@ import com.example.movieticket.domain.User;
 import com.example.movieticket.domain.enums.Role;
 import com.example.movieticket.exception.EmailAlreadyExistsException;
 import com.example.movieticket.exception.InvalidCredentialsException;
+import com.example.movieticket.mapper.UserMapperImpl;
 import com.example.movieticket.repository.UserRepository;
 import com.example.movieticket.security.JwtService;
 import com.example.movieticket.support.factory.UserFactory;
 import com.example.movieticket.web.dto.AuthResponse;
 import com.example.movieticket.web.dto.UserResponse;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,8 +34,12 @@ class AuthServiceTest {
     @Mock
     private JwtService jwtService;
 
-    @InjectMocks
     private AuthService authService;
+
+    @BeforeEach
+    void setUp() {
+        authService = new AuthService(userRepository, passwordEncoder, jwtService, new UserMapperImpl());
+    }
 
     @Test
     void registerNormalizesEmailHashesPasswordAndCreatesCustomer() {

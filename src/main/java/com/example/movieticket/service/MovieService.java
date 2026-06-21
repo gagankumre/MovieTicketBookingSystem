@@ -2,6 +2,7 @@ package com.example.movieticket.service;
 
 import com.example.movieticket.domain.Movie;
 import com.example.movieticket.exception.DuplicateResourceException;
+import com.example.movieticket.mapper.MovieMapper;
 import com.example.movieticket.repository.MovieRepository;
 import com.example.movieticket.web.dto.MovieResponse;
 import java.util.List;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MovieService {
 
     private final MovieRepository movieRepository;
+    private final MovieMapper movieMapper;
 
     @Transactional
     public MovieResponse create(String title, String language, int durationMinutes, String certification) {
@@ -29,21 +31,11 @@ public class MovieService {
         Movie saved = movieRepository.save(new Movie(trimmedTitle, trimmedLanguage, durationMinutes,
                 certification == null ? null : certification.trim()));
         log.info("Created movie id={} title={}", saved.getId(), saved.getTitle());
-        return toResponse(saved);
+        return movieMapper.toResponse(saved);
     }
 
     @Transactional(readOnly = true)
     public List<MovieResponse> list() {
-        return movieRepository.findAll(Sort.by("title")).stream().map(this::toResponse).toList();
-    }
-
-    private MovieResponse toResponse(Movie movie) {
-        return MovieResponse.builder()
-                .id(movie.getId())
-                .title(movie.getTitle())
-                .language(movie.getLanguage())
-                .durationMinutes(movie.getDurationMinutes())
-                .certification(movie.getCertification())
-                .build();
+        return movieMapper.toResponseList(movieRepository.findAll(Sort.by("title")));
     }
 }

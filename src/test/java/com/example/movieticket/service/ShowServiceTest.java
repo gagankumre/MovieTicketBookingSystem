@@ -21,6 +21,8 @@ import com.example.movieticket.repository.ScreenRepository;
 import com.example.movieticket.repository.SeatRepository;
 import com.example.movieticket.repository.ShowRepository;
 import com.example.movieticket.repository.ShowSeatRepository;
+import com.example.movieticket.mapper.ShowMapperImpl;
+import com.example.movieticket.mapper.ShowSeatMapperImpl;
 import com.example.movieticket.support.factory.MovieFactory;
 import com.example.movieticket.support.factory.ScreenFactory;
 import com.example.movieticket.support.factory.SeatFactory;
@@ -33,8 +35,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -54,8 +56,13 @@ class ShowServiceTest {
     @Mock
     private PricingService pricingService;
 
-    @InjectMocks
     private ShowService showService;
+
+    @BeforeEach
+    void setUp() {
+        showService = new ShowService(showRepository, showSeatRepository, screenRepository,
+                movieRepository, seatRepository, pricingService, new ShowMapperImpl(), new ShowSeatMapperImpl());
+    }
 
     private final Screen screen = ScreenFactory.withId(5L, ScreenFactory.screen(null, "Audi 1"));
     private final Movie movie = MovieFactory.withId(7L, MovieFactory.movie("Inception", "English", 148));

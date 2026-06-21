@@ -9,6 +9,8 @@ import com.example.movieticket.domain.enums.ShowType;
 import com.example.movieticket.exception.BusinessRuleException;
 import com.example.movieticket.exception.ResourceNotFoundException;
 import com.example.movieticket.exception.ShowOverlapException;
+import com.example.movieticket.mapper.ShowMapper;
+import com.example.movieticket.mapper.ShowSeatMapper;
 import com.example.movieticket.repository.MovieRepository;
 import com.example.movieticket.repository.ScreenRepository;
 import com.example.movieticket.repository.SeatRepository;
@@ -39,6 +41,8 @@ public class ShowService {
     private final MovieRepository movieRepository;
     private final SeatRepository seatRepository;
     private final PricingService pricingService;
+    private final ShowMapper showMapper;
+    private final ShowSeatMapper showSeatMapper;
 
     /**
      * Schedules a show and publishes it: generates one {@link ShowSeat} per seat in the screen with
@@ -71,16 +75,14 @@ public class ShowService {
         showSeatRepository.saveAll(showSeats);
 
         log.info("Published show id={} on screen={} with {} seats", show.getId(), screenId, showSeats.size());
-        return toResponse(show, showSeats.size());
+        return showMapper.toResponse(show, showSeats.size());
     }
 
     @Transactional(readOnly = true)
     public List<ShowSummaryResponse> browse(Long cityId, Long movieId, LocalDate date) {
         Instant from = date == null ? null : date.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant to = date == null ? null : date.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
-        return showRepository.search(cityId, movieId, from, to).stream()
-                .map(this::toSummary)
-                .toList();
+        return showMapper.toSummaryList(showRepository.search(cityId, movieId, from, to));
     }
 
     @Transactional(readOnly = true)
@@ -88,50 +90,6 @@ public class ShowService {
         if (!showRepository.existsById(showId)) {
             throw new ResourceNotFoundException("Show", showId);
         }
-        return showSeatRepository.findSeatMap(showId).stream()
-                .map(this::toSeatView)
-                .toList();
-    }
-
-    private ShowSummaryResponse toSummary(Show show) {
-        return ShowSummaryResponse.builder()
-                .id(show.getId())
-                .movieId(show.getMovie().getId())
-                .movieTitle(show.getMovie().getTitle())
-                .screenId(show.getScreen().getId())
-                .screenName(show.getScreen().getName())
-                .theaterName(show.getScreen().getTheater().getName())
-                .cityName(show.getScreen().getTheater().getCity().getName())
-                .startTime(show.getStartTime())
-                .endTime(show.getEndTime())
-                .showType(show.getShowType().name())
-                .basePrice(show.getBasePrice())
-                .build();
-    }
-
-    private SeatView toSeatView(ShowSeat showSeat) {
-        return SeatView.builder()
-                .showSeatId(showSeat.getId())
-                .rowLabel(showSeat.getSeat().getRowLabel())
-                .seatNumber(showSeat.getSeat().getSeatNumber())
-                .category(showSeat.getSeat().getCategory().name())
-                .status(showSeat.getStatus().name())
-                .price(showSeat.getPrice())
-                .build();
-    }
-
-    private ShowResponse toResponse(Show show, int totalSeats) {
-        return ShowResponse.builder()
-                .id(show.getId())
-                .screenId(show.getScreen().getId())
-                .screenName(show.getScreen().getName())
-                .movieId(show.getMovie().getId())
-                .movieTitle(show.getMovie().getTitle())
-                .startTime(show.getStartTime())
-                .endTime(show.getEndTime())
-                .showType(show.getShowType().name())
-                .basePrice(show.getBasePrice())
-                .totalSeats(totalSeats)
-                .build();
+        return showSeatMapper.toSeatViewList(showSeatRepository.findSeatMap(showId));
     }
 }

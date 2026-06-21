@@ -1,6 +1,7 @@
 package com.example.movieticket.web;
 
 import com.example.movieticket.service.CityService;
+import com.example.movieticket.service.DiscountService;
 import com.example.movieticket.service.MovieService;
 import com.example.movieticket.service.ScreenService;
 import com.example.movieticket.service.SeatService;
@@ -8,6 +9,8 @@ import com.example.movieticket.service.ShowService;
 import com.example.movieticket.service.TheaterService;
 import com.example.movieticket.web.dto.CityRequest;
 import com.example.movieticket.web.dto.CityResponse;
+import com.example.movieticket.web.dto.DiscountCodeRequest;
+import com.example.movieticket.web.dto.DiscountCodeResponse;
 import com.example.movieticket.web.dto.MovieRequest;
 import com.example.movieticket.web.dto.MovieResponse;
 import com.example.movieticket.web.dto.ScreenRequest;
@@ -46,6 +49,7 @@ public class AdminController {
     private final SeatService seatService;
     private final MovieService movieService;
     private final ShowService showService;
+    private final DiscountService discountService;
 
     @PostMapping("/cities")
     @ResponseStatus(HttpStatus.CREATED)
@@ -89,5 +93,16 @@ public class AdminController {
     public ShowResponse createShow(@Valid @RequestBody ShowRequest request) {
         return showService.createAndPublish(request.getScreenId(), request.getMovieId(),
                 request.getStartTime(), request.getShowType(), request.getBasePrice());
+    }
+
+    @PostMapping("/discount-codes")
+    @ResponseStatus(HttpStatus.CREATED)
+    public DiscountCodeResponse createDiscountCode(@Valid @RequestBody DiscountCodeRequest request) {
+        return discountService.create(request);
+    }
+
+    @GetMapping("/discount-codes")
+    public List<DiscountCodeResponse> listDiscountCodes() {
+        return discountService.list();
     }
 }

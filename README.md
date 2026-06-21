@@ -55,7 +55,8 @@ Authorization (path-based RBAC, `Authorization: Bearer <token>`):
 
 Admin catalog (`/api/admin`, ADMIN): `POST cities`, `POST theaters`, `POST screens` +
 `GET screens?theaterId=`, `POST screens/{id}/seats` (bulk layout), `POST movies`,
-`POST shows` (publishes the show and generates a priced seat per screen seat).
+`POST shows` (publishes the show and generates a priced seat per screen seat),
+`POST/GET discount-codes`.
 Public browse (`/api/public`): `GET cities`, `GET theaters?cityId=`, `GET movies`,
 `GET shows?cityId=&movieId=&date=` (filters optional; `date` is an ISO UTC day),
 `GET shows/{id}/seats` (live seat map: each seat's status and price).

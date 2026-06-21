@@ -42,57 +42,73 @@ core mirrors the inventory block/confirm pattern: a seat is *blocked* (held) for
 
 ## Domain entities
 
-### class: ShowSeat   (the bookable unit — one row per show+seat)
- - id: int
- - showId: int
- - seatId: int
+### class: ShowSeat   (single source of truth — one row per show+seat)
+ - id: long
+ - show: Show
+ - seat: Seat
  - status: SeatStatus
  - price: BigDecimal
- - holdId: Integer
- - version: long                            // @Version optimistic backstop
+ - currentHoldId: Long                       // set while HELD, else null
+ - currentBookingId: Long                     // set while BOOKED, else null
+ - version: long                              // @Version optimistic backstop
 
-    + ShowSeat(showId, seatId, price)
-    + block(holdId) -> boolean              // AVAILABLE -> HELD
-    + confirm() -> boolean                  // HELD -> BOOKED
-    + release() -> boolean                  // HELD -> AVAILABLE
+    + ShowSeat(show, seat, price)
+    + block(holdId) -> boolean               // AVAILABLE -> HELD, sets currentHoldId
+    + confirm(bookingId) -> boolean          // HELD -> BOOKED, clears hold, sets currentBookingId
+    + release() -> boolean                   // HELD|BOOKED -> AVAILABLE, clears both pointers
     + casStatus(prev, next) -> boolean
 
+ // No double-allocation: exactly one ShowSeat row per (show, seat); transitions run under a
+ // PESSIMISTIC_WRITE lock with @Version as the lost-update backstop. Re-bookable after cancel.
+
 ### class: SeatHold
- - id: int
- - userId: int
- - showId: int
+ - id: long
+ - user: User
+ - show: Show
  - status: HoldStatus
- - seatIds: List<int>
  - expiresAt: Instant
 
-    + SeatHold(userId, showId, seatIds, ttl)
+    + SeatHold(user, show, ttl)
     + isExpired(now) -> boolean
     + casStatus(prev, next) -> boolean
 
+ // Covered seats found via ShowSeat.currentHoldId while the hold is ACTIVE (no join table).
+
 ### class: Booking
- - id: int
- - userId: int
- - showId: int
+ - id: long
+ - user: User
+ - show: Show
  - status: BookingStatus
- - seatIds: List<int>
  - subtotal: BigDecimal
  - discountAmount: BigDecimal
  - totalAmount: BigDecimal
  - discountCode: String
  - createdAt: Instant
+ - version: long                              // @Version — guards against double-cancel/refund
 
-    + Booking(userId, showId, seatIds, subtotal, discountAmount, totalAmount)
+    + Booking(user, show, subtotal, discountAmount, totalAmount)
     + casStatus(prev, next) -> boolean
 
+### class: BookingSeat   (historical line item — one per seat per booking)
+ - id: long
+ - booking: Booking
+ - showSeat: ShowSeat
+ - pricePaid: BigDecimal                      // price snapshot at booking time
+
+    + BookingSeat(booking, showSeat, pricePaid)
+
+ // unique (booking, showSeat). No global unique on showSeat — a cancelled+rebooked seat
+ // legitimately yields a new row, preserving history.
+
 ### class: Payment
- - id: int
- - bookingId: int
+ - id: long
+ - booking: Booking                           // many payments per booking (attempts, refunds)
  - status: PaymentStatus
  - amount: BigDecimal
  - method: String
  - gatewayRef: String
 
-    + Payment(bookingId, amount, method)
+    + Payment(booking, amount, method)
     + markSuccess(gatewayRef)
     + markRefunded()
 
@@ -181,9 +197,10 @@ core mirrors the inventory block/confirm pattern: a seat is *blocked* (held) for
  - minBookingAmount: BigDecimal
  - validFrom: Instant
  - validTo: Instant
- - usageLimit: int
+ - usageLimit: int                            // 0 = unlimited
  - usedCount: int
  - active: boolean
+ - version: long                              // @Version — guards usageLimit under concurrent redeem
 
     + isValid(now, subtotal) -> boolean
     + computeDiscount(subtotal) -> BigDecimal

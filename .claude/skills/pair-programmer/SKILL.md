@@ -62,6 +62,22 @@ specification**. All code we write must conform to them.
 - Keep `PLAN.md` and `design.md` mutually consistent — a change to one that affects the other must
   update both.
 
+**They are living documents, not gospel.** `PLAN.md` and `design.md` are the working spec, but
+they are **not fully accurate and may contain inconsistencies, gaps, or sub-optimal choices.** Treat
+them as something to improve, not just obey:
+
+- **Reiterate after every change or design decision.** Each time we add code or make a design call,
+  re-read the relevant parts of both files and actively look for issues — contradictions between the
+  two, stale entries, things the new decision invalidated, missing pieces, or weaker designs than
+  what we just learned. Surface what you find.
+- **Iterate to improve them.** When you spot a problem or a better approach, propose it, and (on
+  agreement) update the files so they get *more* correct over time. The docs should converge toward
+  the best design for the problem statement, not stay frozen.
+- **The one hard limit is scope.** Every change — to code or to the docs — must stay **within the
+  scope of the problem statement** (the movie-ticket-booking PRD). Improve freely inside that
+  boundary; never expand beyond it. If something seems to need going out of scope, stop and raise it
+  rather than drifting.
+
 ## Code quality & design principles
 
 - **OOP + clean code.** Follow standard object-oriented design (encapsulation, single

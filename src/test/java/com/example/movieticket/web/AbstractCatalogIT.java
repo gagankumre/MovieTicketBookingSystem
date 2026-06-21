@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.example.movieticket.repository.CityRepository;
 import com.example.movieticket.repository.MovieRepository;
 import com.example.movieticket.repository.ScreenRepository;
+import com.example.movieticket.repository.SeatHoldRepository;
 import com.example.movieticket.repository.SeatRepository;
 import com.example.movieticket.repository.ShowRepository;
 import com.example.movieticket.repository.ShowSeatRepository;
@@ -38,10 +39,13 @@ abstract class AbstractCatalogIT extends AbstractApiIT {
     protected ShowRepository showRepository;
     @Autowired
     protected ShowSeatRepository showSeatRepository;
+    @Autowired
+    protected SeatHoldRepository seatHoldRepository;
 
     @BeforeEach
     void resetCatalog() {
         showSeatRepository.deleteAll();
+        seatHoldRepository.deleteAll();
         showRepository.deleteAll();
         seatRepository.deleteAll();
         screenRepository.deleteAll();

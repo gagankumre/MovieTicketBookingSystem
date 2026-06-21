@@ -1,0 +1,4 @@
+{
+  "showId": ${showId},
+  "seatIds": [${seatId}]
+}

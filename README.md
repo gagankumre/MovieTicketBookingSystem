@@ -57,6 +57,14 @@ Admin catalog (`/api/admin`, ADMIN): `POST cities`, `POST theaters`, `POST scree
 Public browse (`/api/public`): `GET cities`, `GET theaters?cityId=`, `GET movies`,
 `GET shows?cityId=&movieId=&date=` (filters optional; `date` is an ISO UTC day),
 `GET shows/{id}/seats` (live seat map: each seat's status and price).
+Customer actions (`/api/public`, authenticated): `POST holds` `{showId, seatIds}` (time-bound,
+configurable TTL), `DELETE holds/{id}` (release own hold).
+
+## Concurrency
+Seat occupancy lives on a single `ShowSeat` row per (show, seat). Holds/bookings acquire a
+pessimistic write lock (`SELECT … FOR UPDATE`, id-ordered) before transitioning status, so
+concurrent attempts on the same seat are serialized — exactly one wins, the rest get `409`. No
+double-allocation; seats are re-bookable after release/cancellation.
 
 Errors use a consistent body: `{timestamp, status, error, message, path, fieldErrors}`.
 

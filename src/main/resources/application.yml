@@ -30,6 +30,9 @@ app:
     # Default ADMIN account seeded at startup if absent. Override in real environments.
     email: ${APP_ADMIN_EMAIL:admin@movieticket.local}
     password: ${APP_ADMIN_PASSWORD:admin12345}
+  hold:
+    # Minutes a seat hold stays valid before it auto-expires and the seats are released.
+    ttl-minutes: ${APP_HOLD_TTL_MINUTES:5}
 
 logging:
   level:

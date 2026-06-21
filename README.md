@@ -23,6 +23,8 @@ The app connects to PostgreSQL via env vars (defaults in `src/main/resources/app
 | `APP_JWT_EXPIRATION_MINUTES` | `60` |
 | `APP_ADMIN_EMAIL` | `admin@movieticket.local` (seeded admin) |
 | `APP_ADMIN_PASSWORD` | `admin12345` |
+| `APP_HOLD_TTL_MINUTES` | `5` (seat-hold validity) |
+| `APP_HOLD_SWEEP_INTERVAL_MS` | `60000` (expiry sweeper interval) |
 
 Hibernate manages the schema (`ddl-auto: update`); no migration tool.
 

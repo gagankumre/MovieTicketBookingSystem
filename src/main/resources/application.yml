@@ -33,6 +33,8 @@ app:
   hold:
     # Minutes a seat hold stays valid before it auto-expires and the seats are released.
     ttl-minutes: ${APP_HOLD_TTL_MINUTES:5}
+    # How often the sweeper scans for and releases expired holds.
+    sweep-interval-ms: ${APP_HOLD_SWEEP_INTERVAL_MS:60000}
 
 logging:
   level:

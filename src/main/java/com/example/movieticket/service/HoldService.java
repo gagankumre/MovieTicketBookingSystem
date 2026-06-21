@@ -6,6 +6,7 @@ import com.example.movieticket.domain.Show;
 import com.example.movieticket.domain.ShowSeat;
 import com.example.movieticket.domain.User;
 import com.example.movieticket.domain.enums.HoldStatus;
+import com.example.movieticket.domain.enums.SeatStatus;
 import com.example.movieticket.exception.ResourceNotFoundException;
 import com.example.movieticket.exception.SeatUnavailableException;
 import com.example.movieticket.exception.UnauthorizedActionException;
@@ -51,7 +52,10 @@ public class HoldService {
             }
         }
 
-        Instant expiresAt = Instant.now().plus(Duration.ofMinutes(holdProperties.ttlMinutes()));
+        Instant now = Instant.now();
+        reconcileExpiredHolds(seats, now);
+
+        Instant expiresAt = now.plus(Duration.ofMinutes(holdProperties.ttlMinutes()));
         SeatHold hold = seatHoldRepository.save(new SeatHold(user, show, expiresAt));
         seatLockManager.hold(seats, hold.getId());
 
@@ -75,6 +79,26 @@ public class HoldService {
         }
         hold.casStatus(HoldStatus.ACTIVE, HoldStatus.RELEASED);
         log.info("Released hold {}", holdId);
+    }
+
+    /**
+     * Lazy expiry: a seat still flagged HELD by a hold that has already expired (or vanished) is
+     * treated as free, so a stale hold never blocks a new one between sweeper runs.
+     */
+    private void reconcileExpiredHolds(List<ShowSeat> seats, Instant now) {
+        for (ShowSeat seat : seats) {
+            Long holdId = seat.getCurrentHoldId();
+            if (seat.getStatus() != SeatStatus.HELD || holdId == null) {
+                continue;
+            }
+            SeatHold owningHold = seatHoldRepository.findById(holdId).orElse(null);
+            if (owningHold == null || owningHold.isExpired(now)) {
+                seat.release();
+                if (owningHold != null) {
+                    owningHold.casStatus(HoldStatus.ACTIVE, HoldStatus.EXPIRED);
+                }
+            }
+        }
     }
 
     private HoldResponse toResponse(SeatHold hold, List<ShowSeat> seats) {

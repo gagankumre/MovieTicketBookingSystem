@@ -3,6 +3,7 @@ package com.example.movieticket.web;
 import com.example.movieticket.service.CityService;
 import com.example.movieticket.service.DiscountService;
 import com.example.movieticket.service.MovieService;
+import com.example.movieticket.service.RefundService;
 import com.example.movieticket.service.ScreenService;
 import com.example.movieticket.service.SeatService;
 import com.example.movieticket.service.ShowService;
@@ -11,6 +12,8 @@ import com.example.movieticket.web.dto.CityRequest;
 import com.example.movieticket.web.dto.CityResponse;
 import com.example.movieticket.web.dto.DiscountCodeRequest;
 import com.example.movieticket.web.dto.DiscountCodeResponse;
+import com.example.movieticket.web.dto.RefundPolicyRequest;
+import com.example.movieticket.web.dto.RefundPolicyResponse;
 import com.example.movieticket.web.dto.MovieRequest;
 import com.example.movieticket.web.dto.MovieResponse;
 import com.example.movieticket.web.dto.ScreenRequest;
@@ -50,6 +53,7 @@ public class AdminController {
     private final MovieService movieService;
     private final ShowService showService;
     private final DiscountService discountService;
+    private final RefundService refundService;
 
     @PostMapping("/cities")
     @ResponseStatus(HttpStatus.CREATED)
@@ -104,5 +108,16 @@ public class AdminController {
     @GetMapping("/discount-codes")
     public List<DiscountCodeResponse> listDiscountCodes() {
         return discountService.list();
+    }
+
+    @PostMapping("/refund-policies")
+    @ResponseStatus(HttpStatus.CREATED)
+    public RefundPolicyResponse createRefundPolicy(@Valid @RequestBody RefundPolicyRequest request) {
+        return refundService.createPolicy(request.getHoursBeforeShow(), request.getRefundPercent());
+    }
+
+    @GetMapping("/refund-policies")
+    public List<RefundPolicyResponse> listRefundPolicies() {
+        return refundService.listPolicies();
     }
 }

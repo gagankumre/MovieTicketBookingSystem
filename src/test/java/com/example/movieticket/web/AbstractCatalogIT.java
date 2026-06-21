@@ -9,6 +9,7 @@ import com.example.movieticket.repository.CityRepository;
 import com.example.movieticket.repository.DiscountCodeRepository;
 import com.example.movieticket.repository.MovieRepository;
 import com.example.movieticket.repository.PaymentRepository;
+import com.example.movieticket.repository.RefundPolicyRepository;
 import com.example.movieticket.repository.ScreenRepository;
 import com.example.movieticket.repository.SeatHoldRepository;
 import com.example.movieticket.repository.SeatRepository;
@@ -53,6 +54,8 @@ abstract class AbstractCatalogIT extends AbstractApiIT {
     protected BookingRepository bookingRepository;
     @Autowired
     protected DiscountCodeRepository discountCodeRepository;
+    @Autowired
+    protected RefundPolicyRepository refundPolicyRepository;
 
     @BeforeEach
     void resetCatalog() {
@@ -67,6 +70,7 @@ abstract class AbstractCatalogIT extends AbstractApiIT {
         theaterRepository.deleteAll();
         movieRepository.deleteAll();
         discountCodeRepository.deleteAll();
+        refundPolicyRepository.deleteAll();
         cityRepository.deleteAll();
         userRepository.deleteAll();
         seedAdmin();

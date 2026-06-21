@@ -60,7 +60,7 @@ Authorization (path-based RBAC, `Authorization: Bearer <token>`):
 Admin catalog (`/api/admin`, ADMIN): `POST cities`, `POST theaters`, `POST screens` +
 `GET screens?theaterId=`, `POST screens/{id}/seats` (bulk layout), `POST movies`,
 `POST shows` (publishes the show and generates a priced seat per screen seat),
-`POST/GET discount-codes`, `POST/GET refund-policies`.
+`POST/GET pricing-tiers`, `POST/GET discount-codes`, `POST/GET refund-policies`.
 Public browse (`/api/public`): `GET cities`, `GET theaters?cityId=`, `GET movies`,
 `GET shows?cityId=&movieId=&date=` (filters optional; `date` is an ISO UTC day),
 `GET shows/{id}/seats` (live seat map: each seat's status and price).
@@ -88,7 +88,7 @@ Errors use a consistent body: `{timestamp, status, error, message, path, fieldEr
 
 ## Testing
 ```bash
-mvn verify          # 85 unit (*Test) + 56 integration (*IT) tests on H2
+mvn verify          # 87 unit (*Test) + 59 integration (*IT) tests on H2
 ```
 Unit tests build objects via factories under `src/test/.../support/factory`; integration tests use
 JSON fixtures under `src/test/resources/fixtures` (loaded via `JsonFixtures`). JaCoCo reports are

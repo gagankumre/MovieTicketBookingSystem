@@ -3,6 +3,7 @@ package com.example.movieticket.web;
 import com.example.movieticket.service.CityService;
 import com.example.movieticket.service.DiscountService;
 import com.example.movieticket.service.MovieService;
+import com.example.movieticket.service.PricingService;
 import com.example.movieticket.service.RefundService;
 import com.example.movieticket.service.ScreenService;
 import com.example.movieticket.service.SeatService;
@@ -12,6 +13,8 @@ import com.example.movieticket.web.dto.CityRequest;
 import com.example.movieticket.web.dto.CityResponse;
 import com.example.movieticket.web.dto.DiscountCodeRequest;
 import com.example.movieticket.web.dto.DiscountCodeResponse;
+import com.example.movieticket.web.dto.PricingTierRequest;
+import com.example.movieticket.web.dto.PricingTierResponse;
 import com.example.movieticket.web.dto.RefundPolicyRequest;
 import com.example.movieticket.web.dto.RefundPolicyResponse;
 import com.example.movieticket.web.dto.MovieRequest;
@@ -54,6 +57,7 @@ public class AdminController {
     private final ShowService showService;
     private final DiscountService discountService;
     private final RefundService refundService;
+    private final PricingService pricingService;
 
     @PostMapping("/cities")
     @ResponseStatus(HttpStatus.CREATED)
@@ -119,5 +123,16 @@ public class AdminController {
     @GetMapping("/refund-policies")
     public List<RefundPolicyResponse> listRefundPolicies() {
         return refundService.listPolicies();
+    }
+
+    @PostMapping("/pricing-tiers")
+    @ResponseStatus(HttpStatus.CREATED)
+    public PricingTierResponse createPricingTier(@Valid @RequestBody PricingTierRequest request) {
+        return pricingService.createTier(request);
+    }
+
+    @GetMapping("/pricing-tiers")
+    public List<PricingTierResponse> listPricingTiers() {
+        return pricingService.listTiers();
     }
 }

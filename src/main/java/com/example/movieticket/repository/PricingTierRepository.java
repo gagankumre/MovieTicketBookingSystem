@@ -9,4 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface PricingTierRepository extends JpaRepository<PricingTier, Long> {
 
     Optional<PricingTier> findByCategoryAndShowType(SeatCategory category, ShowType showType);
+
+    boolean existsByCategoryAndShowType(SeatCategory category, ShowType showType);
 }

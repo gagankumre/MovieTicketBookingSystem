@@ -3,24 +3,11 @@ package com.example.movieticket.web;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.example.movieticket.repository.RefundPolicyRepository;
 import com.example.movieticket.support.JsonFixtures;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
-class RefundPolicyAdminIT extends AbstractApiIT {
-
-    @Autowired
-    private RefundPolicyRepository refundPolicyRepository;
-
-    @BeforeEach
-    void setUp() {
-        refundPolicyRepository.deleteAll();
-        userRepository.deleteAll();
-        seedAdmin();
-    }
+class RefundPolicyAdminIT extends AbstractCatalogIT {
 
     private void createPolicy(String token) throws Exception {
         mockMvc.perform(post("/api/admin/refund-policies")

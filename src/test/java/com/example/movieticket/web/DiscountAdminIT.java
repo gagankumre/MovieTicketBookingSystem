@@ -3,24 +3,11 @@ package com.example.movieticket.web;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.example.movieticket.repository.DiscountCodeRepository;
 import com.example.movieticket.support.JsonFixtures;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
-class DiscountAdminIT extends AbstractApiIT {
-
-    @Autowired
-    private DiscountCodeRepository discountCodeRepository;
-
-    @BeforeEach
-    void setUp() {
-        discountCodeRepository.deleteAll();
-        userRepository.deleteAll();
-        seedAdmin();
-    }
+class DiscountAdminIT extends AbstractCatalogIT {
 
     private void createDiscount(String token) throws Exception {
         mockMvc.perform(post("/api/admin/discount-codes")

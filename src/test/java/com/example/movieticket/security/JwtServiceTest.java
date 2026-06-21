@@ -1,16 +1,20 @@
 package com.example.movieticket.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.example.movieticket.domain.User;
 import com.example.movieticket.support.factory.UserFactory;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import javax.crypto.SecretKey;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 
 class JwtServiceTest {
 
@@ -41,5 +45,23 @@ class JwtServiceTest {
 
         assertThat(claims.getExpiration()).isAfter(new Date());
         assertThat(claims.getExpiration()).isAfter(claims.getIssuedAt());
+    }
+
+    @Test
+    void toAuthenticationCarriesPrincipalAndRoleAuthority() {
+        User user = UserFactory.withId(5L, UserFactory.admin("carol@example.com"));
+
+        Authentication authentication = jwtService.toAuthentication(jwtService.generateToken(user));
+
+        assertThat(authentication.getName()).isEqualTo("carol@example.com");
+        assertThat(authentication.getAuthorities())
+                .extracting(GrantedAuthority::getAuthority)
+                .containsExactly("ROLE_ADMIN");
+    }
+
+    @Test
+    void toAuthenticationRejectsTamperedToken() {
+        assertThatThrownBy(() -> jwtService.toAuthentication("not-a-valid-token"))
+                .isInstanceOf(JwtException.class);
     }
 }

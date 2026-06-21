@@ -21,6 +21,8 @@ The app connects to PostgreSQL via env vars (defaults in `src/main/resources/app
 | `DB_PASSWORD` | `postgres` |
 | `APP_JWT_SECRET` | dev default (override in real envs; ≥32 bytes) |
 | `APP_JWT_EXPIRATION_MINUTES` | `60` |
+| `APP_ADMIN_EMAIL` | `admin@movieticket.local` (seeded admin) |
+| `APP_ADMIN_PASSWORD` | `admin12345` |
 
 Hibernate manages the schema (`ddl-auto: update`); no migration tool.
 
@@ -44,6 +46,11 @@ Auth (JWT):
 - `POST /api/auth/register` — `{email, password}` → 201 `{id, email, role}`. Self-registration
   always creates a `CUSTOMER`.
 - `POST /api/auth/login` — `{email, password}` → 200 `{token, tokenType, expiresInMinutes}`.
+
+Authorization (path-based RBAC, `Authorization: Bearer <token>`):
+- `/api/admin/**` — ADMIN only (e.g. `POST /api/admin/cities`).
+- `/api/public/**` — browse GETs open (e.g. `GET /api/public/cities`); customer write actions
+  require a valid token.
 
 Errors use a consistent body: `{timestamp, status, error, message, path, fieldErrors}`.
 

@@ -1,14 +1,19 @@
 package com.example.movieticket.security;
 
 import com.example.movieticket.domain.User;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.List;
 import javax.crypto.SecretKey;
-import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -39,5 +44,22 @@ public class JwtService {
 
     public long getExpirationMinutes() {
         return expirationMinutes;
+    }
+
+    /**
+     * Verifies the token and builds an {@link Authentication} from its claims (principal = email,
+     * single {@code ROLE_<role>} authority). Throws {@link io.jsonwebtoken.JwtException} if the
+     * token is invalid, tampered, or expired.
+     */
+    public Authentication toAuthentication(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(signingKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        String email = claims.getSubject();
+        String role = claims.get("role", String.class);
+        var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+        return new UsernamePasswordAuthenticationToken(email, null, authorities);
     }
 }

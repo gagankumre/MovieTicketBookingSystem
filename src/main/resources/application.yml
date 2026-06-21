@@ -1,10 +1,15 @@
+server:
+  port: 8088
+
 spring:
+  profiles:
+    active: local
   application:
     name: movie-ticket-booking
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/movieticket}
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -21,6 +26,10 @@ app:
     # HS256 signing secret (>= 32 bytes). Override in real environments via APP_JWT_SECRET.
     secret: ${APP_JWT_SECRET:change-me-dev-secret-please-override-with-32B-minimum-value}
     expiration-minutes: ${APP_JWT_EXPIRATION_MINUTES:60}
+  admin:
+    # Default ADMIN account seeded at startup if absent. Override in real environments.
+    email: ${APP_ADMIN_EMAIL:admin@movieticket.local}
+    password: ${APP_ADMIN_PASSWORD:admin12345}
 
 logging:
   level:

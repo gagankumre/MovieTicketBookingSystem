@@ -121,19 +121,25 @@ configurable lead window and enqueues a reminder per confirmed booking into the 
 alongside confirmation/cancellation.
 
 ## REST API surface
+URL convention (kept deliberately simple): admin write/management endpoints live under
+`/api/admin/**` (one `AdminController`, ROLE_ADMIN); customer-facing endpoints under
+`/api/public/**` — browse via `CatalogController`, with customer write actions
+(holds/bookings) in their own controller(s) under the same path; auth under `/api/auth/**`.
+Path-based RBAC rather than per-method annotations.
+
 **Auth:** `POST /api/auth/register`, `POST /api/auth/login` (→ JWT).
-**Admin (ROLE_ADMIN):** CRUD for `/api/admin/cities`, `/theaters`, `/screens`, `/screens/{id}/seats`
-(bulk layout), `/movies`, `/shows` (publish → generates ShowSeats), `/pricing-tiers`,
-`/discount-codes`, `/refund-policies`.
-**Customer (ROLE_CUSTOMER):** `GET /api/cities`, `/theaters`, `/shows` (browse/filter by city,
-movie, date), `GET /api/shows/{id}/seats` (live seat map), `POST /api/holds`,
-`DELETE /api/holds/{id}` (manual release), `POST /api/bookings`, `POST /api/bookings/{id}/cancel`,
-`GET /api/bookings`.
+**Admin (`/api/admin/**`, ROLE_ADMIN):** manage `cities`, `theaters`, `screens`,
+`screens/{id}/seats` (bulk layout), `movies`, `shows` (publish → generates ShowSeats),
+`pricing-tiers`, `discount-codes`, `refund-policies`.
+**Public / customer (`/api/public/**`):** browse `cities`, `theaters`, `shows` (filter by city,
+movie, date), `shows/{id}/seats` (live seat map); plus authenticated customer actions
+`holds` (create / release), `bookings` (create / cancel / history).
 
 ## Cross-cutting
-- **RBAC:** Spring Security filter chain validates JWT, populates authorities;
-  `@PreAuthorize("hasRole('ADMIN')")` on admin endpoints, ownership checks in service layer for
-  customer resources.
+- **RBAC:** Spring Security filter chain validates the JWT and populates authorities; **path-based
+  rules** — `/api/auth/**` and `/api/public/**` browse are open, `/api/admin/**` requires
+  `ROLE_ADMIN`, authenticated customer actions require a valid token, with ownership checks in the
+  service layer. A config-seeded default admin (`app.admin.*`) provisions the first ADMIN account.
 - **Validation:** Jakarta Bean Validation on request DTOs (`@NotNull`, `@Email`, `@Future`,
   `@Positive`, etc.).
 - **Error handling:** A single global `@RestControllerAdvice` produces a consistent JSON error

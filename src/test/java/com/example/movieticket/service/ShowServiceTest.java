@@ -8,7 +8,9 @@ import static org.mockito.Mockito.when;
 
 import com.example.movieticket.domain.Movie;
 import com.example.movieticket.domain.Screen;
+import com.example.movieticket.domain.Seat;
 import com.example.movieticket.domain.Show;
+import com.example.movieticket.domain.ShowSeat;
 import com.example.movieticket.domain.enums.SeatCategory;
 import com.example.movieticket.domain.enums.ShowType;
 import com.example.movieticket.exception.BusinessRuleException;
@@ -23,6 +25,7 @@ import com.example.movieticket.support.factory.MovieFactory;
 import com.example.movieticket.support.factory.ScreenFactory;
 import com.example.movieticket.support.factory.SeatFactory;
 import com.example.movieticket.support.factory.ShowFactory;
+import com.example.movieticket.web.dto.SeatView;
 import com.example.movieticket.web.dto.ShowResponse;
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -109,6 +112,33 @@ class ShowServiceTest {
 
         assertThatThrownBy(() -> showService.createAndPublish(5L, 7L, start, ShowType.REGULAR, basePrice))
                 .isInstanceOf(ShowOverlapException.class);
+    }
+
+    @Test
+    void getSeatMapReturnsSeatViews() {
+        Seat seat = SeatFactory.withId(11L, SeatFactory.seat(screen, "A", 1, SeatCategory.REGULAR));
+        ShowSeat showSeat = new ShowSeat(null, seat, new BigDecimal("200.00"));
+        showSeat.setId(20L);
+        when(showRepository.existsById(99L)).thenReturn(true);
+        when(showSeatRepository.findSeatMap(99L)).thenReturn(List.of(showSeat));
+
+        List<SeatView> seats = showService.getSeatMap(99L);
+
+        assertThat(seats).singleElement().satisfies(view -> {
+            assertThat(view.getShowSeatId()).isEqualTo(20L);
+            assertThat(view.getRowLabel()).isEqualTo("A");
+            assertThat(view.getSeatNumber()).isEqualTo(1);
+            assertThat(view.getStatus()).isEqualTo("AVAILABLE");
+            assertThat(view.getPrice()).isEqualByComparingTo("200.00");
+        });
+    }
+
+    @Test
+    void getSeatMapThrowsWhenShowMissing() {
+        when(showRepository.existsById(99L)).thenReturn(false);
+
+        assertThatThrownBy(() -> showService.getSeatMap(99L))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test

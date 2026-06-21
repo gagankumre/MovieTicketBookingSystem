@@ -14,10 +14,14 @@ import com.example.movieticket.repository.ScreenRepository;
 import com.example.movieticket.repository.SeatRepository;
 import com.example.movieticket.repository.ShowRepository;
 import com.example.movieticket.repository.ShowSeatRepository;
+import com.example.movieticket.web.dto.SeatView;
 import com.example.movieticket.web.dto.ShowResponse;
+import com.example.movieticket.web.dto.ShowSummaryResponse;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -68,6 +72,52 @@ public class ShowService {
 
         log.info("Published show id={} on screen={} with {} seats", show.getId(), screenId, showSeats.size());
         return toResponse(show, showSeats.size());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ShowSummaryResponse> browse(Long cityId, Long movieId, LocalDate date) {
+        Instant from = date == null ? null : date.atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant to = date == null ? null : date.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+        return showRepository.search(cityId, movieId, from, to).stream()
+                .map(this::toSummary)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<SeatView> getSeatMap(Long showId) {
+        if (!showRepository.existsById(showId)) {
+            throw new ResourceNotFoundException("Show", showId);
+        }
+        return showSeatRepository.findSeatMap(showId).stream()
+                .map(this::toSeatView)
+                .toList();
+    }
+
+    private ShowSummaryResponse toSummary(Show show) {
+        return ShowSummaryResponse.builder()
+                .id(show.getId())
+                .movieId(show.getMovie().getId())
+                .movieTitle(show.getMovie().getTitle())
+                .screenId(show.getScreen().getId())
+                .screenName(show.getScreen().getName())
+                .theaterName(show.getScreen().getTheater().getName())
+                .cityName(show.getScreen().getTheater().getCity().getName())
+                .startTime(show.getStartTime())
+                .endTime(show.getEndTime())
+                .showType(show.getShowType().name())
+                .basePrice(show.getBasePrice())
+                .build();
+    }
+
+    private SeatView toSeatView(ShowSeat showSeat) {
+        return SeatView.builder()
+                .showSeatId(showSeat.getId())
+                .rowLabel(showSeat.getSeat().getRowLabel())
+                .seatNumber(showSeat.getSeat().getSeatNumber())
+                .category(showSeat.getSeat().getCategory().name())
+                .status(showSeat.getStatus().name())
+                .price(showSeat.getPrice())
+                .build();
     }
 
     private ShowResponse toResponse(Show show, int totalSeats) {

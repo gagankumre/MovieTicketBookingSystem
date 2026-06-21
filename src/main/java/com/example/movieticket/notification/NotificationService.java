@@ -13,6 +13,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,20 +30,32 @@ public class NotificationService {
     private final BookingRepository bookingRepository;
     private final NotificationSender notificationSender;
     private final NotificationProperties properties;
+    private final ApplicationEventPublisher eventPublisher;
 
     public void enqueueBookingConfirmation(Booking booking) {
-        enqueue(NotificationType.BOOKING_CONFIRMATION, booking,
+        enqueueAndSignal(NotificationType.BOOKING_CONFIRMATION, booking,
                 "Booking " + booking.getId() + " confirmed for show " + booking.getShow().getId());
     }
 
     public void enqueueBookingCancellation(Booking booking) {
-        enqueue(NotificationType.BOOKING_CANCELLATION, booking,
+        enqueueAndSignal(NotificationType.BOOKING_CANCELLATION, booking,
                 "Booking " + booking.getId() + " cancelled");
     }
 
-    private void enqueue(NotificationType type, Booking booking, String payload) {
+    private void enqueueAndSignal(NotificationType type, Booking booking, String payload) {
         String reference = type + ":" + booking.getId();
-        outboxRepository.save(new NotificationOutbox(type, booking.getUser().getEmail(), payload, reference));
+        NotificationOutbox saved = outboxRepository.save(
+                new NotificationOutbox(type, booking.getUser().getEmail(), payload, reference));
+        // Dispatched promptly after the booking commits (see NotificationDispatchListener).
+        eventPublisher.publishEvent(new NotificationEnqueuedEvent(saved.getId()));
+    }
+
+    /** Dispatches a single pending notification by id (used by the after-commit async listener). */
+    @Transactional
+    public void dispatchOne(Long outboxId) {
+        outboxRepository.findById(outboxId)
+                .filter(notification -> notification.getStatus() == NotificationStatus.PENDING)
+                .ifPresent(this::trySend);
     }
 
     /** Sends every PENDING notification; failures are retried on later runs until max attempts. */
@@ -51,17 +64,24 @@ public class NotificationService {
         List<NotificationOutbox> pending = outboxRepository.findByStatus(NotificationStatus.PENDING);
         int sent = 0;
         for (NotificationOutbox notification : pending) {
-            try {
-                notificationSender.send(notification);
-                notification.markSent();
+            if (trySend(notification)) {
                 sent++;
-            } catch (RuntimeException ex) {
-                notification.recordFailedAttempt(properties.maxAttempts());
-                log.warn("Notification {} delivery failed (attempt {}): {}",
-                        notification.getId(), notification.getAttempts(), ex.getMessage());
             }
         }
         return sent;
+    }
+
+    private boolean trySend(NotificationOutbox notification) {
+        try {
+            notificationSender.send(notification);
+            notification.markSent();
+            return true;
+        } catch (RuntimeException ex) {
+            notification.recordFailedAttempt(properties.maxAttempts());
+            log.warn("Notification {} delivery failed (attempt {}): {}",
+                    notification.getId(), notification.getAttempts(), ex.getMessage());
+            return false;
+        }
     }
 
     /** Enqueues a one-off reminder for each confirmed booking whose show starts within the lead window. */

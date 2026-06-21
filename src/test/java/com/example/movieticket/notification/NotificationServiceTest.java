@@ -23,11 +23,13 @@ import com.example.movieticket.support.factory.UserFactory;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {
@@ -38,13 +40,15 @@ class NotificationServiceTest {
     private BookingRepository bookingRepository;
     @Mock
     private NotificationSender notificationSender;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     private NotificationService notificationService;
 
     @BeforeEach
     void setUp() {
         notificationService = new NotificationService(outboxRepository, bookingRepository,
-                notificationSender, new NotificationProperties(0, 0, 60, 5));
+                notificationSender, new NotificationProperties(0, 0, 60, 5), eventPublisher);
     }
 
     private NotificationOutbox pendingNotification() {
@@ -74,6 +78,17 @@ class NotificationServiceTest {
         assertThat(sent).isZero();
         assertThat(notification.getAttempts()).isEqualTo(1);
         assertThat(notification.getStatus()).isEqualTo(NotificationStatus.PENDING);
+    }
+
+    @Test
+    void dispatchOneSendsPendingNotification() {
+        NotificationOutbox notification = pendingNotification();
+        when(outboxRepository.findById(42L)).thenReturn(Optional.of(notification));
+
+        notificationService.dispatchOne(42L);
+
+        assertThat(notification.getStatus()).isEqualTo(NotificationStatus.SENT);
+        verify(notificationSender).send(notification);
     }
 
     @Test

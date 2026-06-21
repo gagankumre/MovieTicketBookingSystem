@@ -59,22 +59,31 @@ class NotificationIT extends AbstractCatalogIT {
     }
 
     @Test
-    void confirmationIsEnqueuedPendingThenDispatched() throws Exception {
+    void confirmationIsDeliveredAsynchronouslyAfterCommit() throws Exception {
         book();
 
-        // Written in the booking transaction, not yet sent — the booking flow did not block on delivery.
-        assertThat(notificationOutboxRepository.findAll())
-                .singleElement()
-                .satisfies(outbox -> {
-                    assertThat(outbox.getType()).isEqualTo(NotificationType.BOOKING_CONFIRMATION);
-                    assertThat(outbox.getStatus()).isEqualTo(NotificationStatus.PENDING);
-                });
+        // The booking returned without blocking on delivery; the after-commit @Async listener
+        // dispatches the outbox row shortly afterwards on a separate thread.
+        await(() -> !notificationOutboxRepository.findByStatus(NotificationStatus.SENT).isEmpty());
 
-        int sent = notificationService.dispatchPending();
-
-        assertThat(sent).isEqualTo(1);
         assertThat(notificationOutboxRepository.findByStatus(NotificationStatus.SENT))
                 .extracting(NotificationOutbox::getType)
                 .containsExactly(NotificationType.BOOKING_CONFIRMATION);
+    }
+
+    @Test
+    void scheduledDispatchActsAsRetrySafetyNet() throws Exception {
+        book();
+        // Whatever the async listener didn't finish, the scheduled dispatcher would pick up;
+        // invoking it directly is idempotent and leaves the confirmation SENT.
+        notificationService.dispatchPending();
+
+        assertThat(notificationOutboxRepository.findByStatus(NotificationStatus.PENDING)).isEmpty();
+    }
+
+    private void await(java.util.function.BooleanSupplier condition) throws InterruptedException {
+        for (int i = 0; i < 50 && !condition.getAsBoolean(); i++) {
+            Thread.sleep(100);
+        }
     }
 }

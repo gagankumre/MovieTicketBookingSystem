@@ -73,10 +73,12 @@ path.
 
 ## Notifications
 Confirmation and cancellation notifications use a **transactional outbox**: the booking transaction
-writes a `PENDING` row (durable, atomic, non-blocking), and a `@Scheduled` dispatcher sends them
-off-thread and retries failures up to a max-attempts cap. A separate scheduled job enqueues
-de-duplicated pre-show reminders for confirmed bookings within a lead window. The sender is a
-logging stub in place of a real email/SMS provider.
+writes a `PENDING` row (durable, atomic, non-blocking). Delivery happens **off the request thread**
+two ways: an `@Async @TransactionalEventListener(AFTER_COMMIT)` dispatches the row **immediately**
+after the booking commits (dedicated executor), and a `@Scheduled` dispatcher is the **retry/safety
+net** for anything still pending — retrying failures up to a max-attempts cap. A separate scheduled
+job enqueues de-duplicated pre-show reminders for confirmed bookings within a lead window. The
+sender is a logging stub in place of a real email/SMS provider.
 
 ## Concurrency
 Seat occupancy lives on a single `ShowSeat` row per (show, seat). Holds/bookings acquire a

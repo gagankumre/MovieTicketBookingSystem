@@ -61,7 +61,10 @@ Public browse (`/api/public`): `GET cities`, `GET theaters?cityId=`, `GET movies
 `GET shows?cityId=&movieId=&date=` (filters optional; `date` is an ISO UTC day),
 `GET shows/{id}/seats` (live seat map: each seat's status and price).
 Customer actions (`/api/public`, authenticated): `POST holds` `{showId, seatIds}` (time-bound,
-configurable TTL), `DELETE holds/{id}` (release own hold).
+configurable TTL), `DELETE holds/{id}` (release own hold), `POST bookings`
+`{holdId, discountCode?, paymentMethod}` (confirm + pay), `GET bookings` (own history),
+`GET bookings/{id}` (own booking detail). Payment uses a mock gateway; `paymentMethod=DECLINE`
+forces a 402 to exercise the failure path.
 
 ## Concurrency
 Seat occupancy lives on a single `ShowSeat` row per (show, seat). Holds/bookings acquire a

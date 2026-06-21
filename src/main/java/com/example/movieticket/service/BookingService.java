@@ -5,6 +5,7 @@ import com.example.movieticket.domain.BookingSeat;
 import com.example.movieticket.domain.Payment;
 import com.example.movieticket.domain.SeatHold;
 import com.example.movieticket.domain.ShowSeat;
+import com.example.movieticket.domain.User;
 import com.example.movieticket.domain.enums.HoldStatus;
 import com.example.movieticket.domain.enums.SeatStatus;
 import com.example.movieticket.exception.HoldExpiredException;
@@ -20,7 +21,9 @@ import com.example.movieticket.repository.BookingSeatRepository;
 import com.example.movieticket.repository.PaymentRepository;
 import com.example.movieticket.repository.SeatHoldRepository;
 import com.example.movieticket.repository.ShowSeatRepository;
+import com.example.movieticket.repository.UserRepository;
 import com.example.movieticket.web.dto.BookingResponse;
+import com.example.movieticket.web.dto.BookingSummaryResponse;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -43,6 +46,7 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final BookingSeatRepository bookingSeatRepository;
     private final PaymentRepository paymentRepository;
+    private final UserRepository userRepository;
     private final BookingMapper bookingMapper;
 
     /**
@@ -107,6 +111,25 @@ public class BookingService {
         return toResponse(booking, bookingSeats, payment);
     }
 
+    @Transactional(readOnly = true)
+    public List<BookingSummaryResponse> getMyBookings(String userEmail) {
+        User customer = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userEmail));
+        return bookingMapper.toSummaryList(bookingRepository.findByUserIdOrderByCreatedAtDesc(customer.getId()));
+    }
+
+    @Transactional(readOnly = true)
+    public BookingResponse getBooking(String userEmail, Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking", bookingId));
+        if (!booking.getUser().getEmail().equals(userEmail)) {
+            throw new UnauthorizedActionException("Booking " + bookingId + " does not belong to the current user");
+        }
+        List<BookingSeat> bookingSeats = bookingSeatRepository.findByBookingId(bookingId);
+        Payment payment = paymentRepository.findFirstByBookingIdOrderByIdDesc(bookingId).orElse(null);
+        return toResponse(booking, bookingSeats, payment);
+    }
+
     private BookingResponse toResponse(Booking booking, List<BookingSeat> bookingSeats, Payment payment) {
         return BookingResponse.builder()
                 .bookingId(booking.getId())
@@ -118,8 +141,8 @@ public class BookingService {
                 .discountCode(booking.getDiscountCode())
                 .createdAt(booking.getCreatedAt())
                 .seats(bookingMapper.toBookedSeats(bookingSeats))
-                .paymentStatus(payment.getStatus().name())
-                .paymentReference(payment.getGatewayRef())
+                .paymentStatus(payment == null ? null : payment.getStatus().name())
+                .paymentReference(payment == null ? null : payment.getGatewayRef())
                 .build();
     }
 }

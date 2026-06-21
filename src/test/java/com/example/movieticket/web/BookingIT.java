@@ -103,4 +103,43 @@ class BookingIT extends AbstractCatalogIT {
         mockMvc.perform(get("/api/public/shows/" + showId + "/seats"))
                 .andExpect(jsonPath("$[?(@.showSeatId == " + seatId + ")].status").value("HELD"));
     }
+
+    private long book() throws Exception {
+        long holdId = holdSeat();
+        String response = mockMvc.perform(post("/api/public/bookings")
+                        .header("Authorization", "Bearer " + customerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(JsonFixtures.read("booking/request/book.json", Map.of("holdId", holdId))))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        return objectMapper.readTree(response).get("bookingId").asLong();
+    }
+
+    @Test
+    void historyListsCallersBookings() throws Exception {
+        long bookingId = book();
+
+        mockMvc.perform(get("/api/public/bookings").header("Authorization", "Bearer " + customerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].bookingId").value((int) bookingId))
+                .andExpect(jsonPath("$[0].status").value("CONFIRMED"));
+    }
+
+    @Test
+    void getBookingReturnsDetailWithSeats() throws Exception {
+        long bookingId = book();
+
+        mockMvc.perform(get("/api/public/bookings/" + bookingId).header("Authorization", "Bearer " + customerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.bookingId").value((int) bookingId))
+                .andExpect(jsonPath("$.seats.length()").value(1))
+                .andExpect(jsonPath("$.paymentStatus").value("SUCCESS"));
+    }
+
+    @Test
+    void bookingHistoryRequiresAuthentication() throws Exception {
+        mockMvc.perform(get("/api/public/bookings"))
+                .andExpect(status().isUnauthorized());
+    }
 }

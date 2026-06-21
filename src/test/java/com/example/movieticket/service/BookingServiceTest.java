@@ -25,6 +25,7 @@ import com.example.movieticket.repository.BookingSeatRepository;
 import com.example.movieticket.repository.PaymentRepository;
 import com.example.movieticket.repository.SeatHoldRepository;
 import com.example.movieticket.repository.ShowSeatRepository;
+import com.example.movieticket.repository.UserRepository;
 import com.example.movieticket.support.factory.SeatFactory;
 import com.example.movieticket.support.factory.ShowFactory;
 import com.example.movieticket.support.factory.UserFactory;
@@ -58,6 +59,8 @@ class BookingServiceTest {
     private BookingSeatRepository bookingSeatRepository;
     @Mock
     private PaymentRepository paymentRepository;
+    @Mock
+    private UserRepository userRepository;
 
     private BookingService bookingService;
 
@@ -70,7 +73,7 @@ class BookingServiceTest {
     void setUp() {
         bookingService = new BookingService(seatHoldRepository, showSeatRepository, seatLockManager,
                 discountService, paymentGateway, bookingRepository, bookingSeatRepository,
-                paymentRepository, new BookingMapperImpl());
+                paymentRepository, userRepository, new BookingMapperImpl());
     }
 
     private SeatHold activeHold() {

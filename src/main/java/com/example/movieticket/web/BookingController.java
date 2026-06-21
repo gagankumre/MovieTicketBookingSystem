@@ -4,13 +4,16 @@ import com.example.movieticket.service.BookingService;
 import com.example.movieticket.service.HoldService;
 import com.example.movieticket.web.dto.BookingRequest;
 import com.example.movieticket.web.dto.BookingResponse;
+import com.example.movieticket.web.dto.BookingSummaryResponse;
 import com.example.movieticket.web.dto.HoldRequest;
 import com.example.movieticket.web.dto.HoldResponse;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,6 +44,16 @@ public class BookingController {
     public BookingResponse book(@AuthenticationPrincipal String email, @Valid @RequestBody BookingRequest request) {
         return bookingService.confirmBooking(email, request.getHoldId(),
                 request.getDiscountCode(), request.getPaymentMethod());
+    }
+
+    @GetMapping("/bookings")
+    public List<BookingSummaryResponse> myBookings(@AuthenticationPrincipal String email) {
+        return bookingService.getMyBookings(email);
+    }
+
+    @GetMapping("/bookings/{bookingId}")
+    public BookingResponse getBooking(@AuthenticationPrincipal String email, @PathVariable Long bookingId) {
+        return bookingService.getBooking(email, bookingId);
     }
 
     @DeleteMapping("/holds/{holdId}")

@@ -202,3 +202,5 @@ filter, userdetails), `notification`, `scheduler`. Tests mirror under `src/test/
   lifecycle.
 - `ShowSeat.currentHoldId` / `currentBookingId` are soft `Long` pointers (no DB foreign key) to
   keep the occupancy row decoupled from hold/booking lifecycles.
+- Self-registration always yields `CUSTOMER` (clients cannot self-assign `ADMIN`); admin accounts
+  are provisioned separately. Emails are normalized to lowercase; passwords are BCrypt-hashed.

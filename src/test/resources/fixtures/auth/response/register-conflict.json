@@ -1,0 +1,5 @@
+{
+  "status": 409,
+  "error": "Conflict",
+  "path": "/api/auth/register"
+}

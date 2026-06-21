@@ -3,23 +3,19 @@ package com.example.movieticket.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.example.movieticket.domain.enums.SeatStatus;
-import java.math.BigDecimal;
+import com.example.movieticket.support.factory.ShowSeatFactory;
 import org.junit.jupiter.api.Test;
 
 class ShowSeatTest {
 
-    private ShowSeat newSeat() {
-        return new ShowSeat(null, null, new BigDecimal("200.00"));
-    }
-
     @Test
     void newSeatStartsAvailable() {
-        assertThat(newSeat().getStatus()).isEqualTo(SeatStatus.AVAILABLE);
+        assertThat(ShowSeatFactory.availableSeat().getStatus()).isEqualTo(SeatStatus.AVAILABLE);
     }
 
     @Test
     void blockMovesAvailableToHeldAndRecordsHold() {
-        ShowSeat seat = newSeat();
+        ShowSeat seat = ShowSeatFactory.availableSeat();
 
         assertThat(seat.block(7L)).isTrue();
 
@@ -29,7 +25,7 @@ class ShowSeatTest {
 
     @Test
     void blockFailsWhenNotAvailable() {
-        ShowSeat seat = newSeat();
+        ShowSeat seat = ShowSeatFactory.availableSeat();
         seat.block(7L);
 
         assertThat(seat.block(8L)).isFalse();
@@ -38,7 +34,7 @@ class ShowSeatTest {
 
     @Test
     void confirmMovesHeldToBookedClearingHoldAndSettingBooking() {
-        ShowSeat seat = newSeat();
+        ShowSeat seat = ShowSeatFactory.availableSeat();
         seat.block(7L);
 
         assertThat(seat.confirm(99L)).isTrue();
@@ -50,7 +46,7 @@ class ShowSeatTest {
 
     @Test
     void confirmFailsWhenNotHeld() {
-        ShowSeat seat = newSeat();
+        ShowSeat seat = ShowSeatFactory.availableSeat();
 
         assertThat(seat.confirm(99L)).isFalse();
         assertThat(seat.getStatus()).isEqualTo(SeatStatus.AVAILABLE);
@@ -58,7 +54,7 @@ class ShowSeatTest {
 
     @Test
     void releaseFromBookedReturnsToAvailableAndClearsPointers() {
-        ShowSeat seat = newSeat();
+        ShowSeat seat = ShowSeatFactory.availableSeat();
         seat.block(7L);
         seat.confirm(99L);
 
@@ -71,12 +67,12 @@ class ShowSeatTest {
 
     @Test
     void releaseFailsWhenAlreadyAvailable() {
-        assertThat(newSeat().release()).isFalse();
+        assertThat(ShowSeatFactory.availableSeat().release()).isFalse();
     }
 
     @Test
     void seatIsRebookableAfterRelease() {
-        ShowSeat seat = newSeat();
+        ShowSeat seat = ShowSeatFactory.availableSeat();
         seat.block(7L);
         seat.confirm(99L);
         seat.release();
@@ -87,7 +83,7 @@ class ShowSeatTest {
 
     @Test
     void casStatusOnlySucceedsFromExpectedState() {
-        ShowSeat seat = newSeat();
+        ShowSeat seat = ShowSeatFactory.availableSeat();
 
         assertThat(seat.casStatus(SeatStatus.HELD, SeatStatus.BOOKED)).isFalse();
         assertThat(seat.casStatus(SeatStatus.AVAILABLE, SeatStatus.HELD)).isTrue();

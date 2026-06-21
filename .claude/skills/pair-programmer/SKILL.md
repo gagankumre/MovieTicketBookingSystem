@@ -44,6 +44,18 @@ it, and never write more test than is needed to fail.
 - A change that adds/changes an endpoint is **not done** until its integration test exists and
   passes. A change that adds/changes an important method is **not done** until its unit test
   exists and passes.
+- **Unit tests build objects via test factories, not raw constructors.** Keep per-entity factories
+  under `src/test/java/.../support/factory/` (e.g. `ShowSeatFactory`, `UserFactory`) with
+  **overloaded** creator methods + sensible defaults. **Reuse** them across tests; add new
+  overloads **only as a test needs them**, and **actively refactor/consolidate** to prevent a
+  proliferation of near-duplicate methods (collapse overlapping overloads, prefer defaults +
+  a few meaningful variants over one-off methods).
+- **Integration tests use JSON fixtures, not inline JSON.** Keep request and expected-response
+  bodies in files under `src/test/resources/fixtures/<feature>/request/*.json` and
+  `.../response/*.json`, loaded via the `JsonFixtures` test helper. Send the request fixture as the
+  body; assert the response against the response fixture with a lenient JSON comparison that
+  ignores volatile fields (ids, tokens, timestamps). Don't embed JSON string literals in test
+  code — add or reuse a fixture file instead.
 
 ## Source of truth — PLAN.md and design.md
 
@@ -103,6 +115,14 @@ them as something to improve, not just obey:
   represents one coherent unit of work (not a half-finished change).
 - **Before starting, always ask the user how much to cover in one go** — confirm the scope/size
   of the next slice before writing code, and stop at that boundary.
+
+**Build by priority, and create supporting pieces on demand.**
+- Sequence the work by the **importance and priority of each component** — build the
+  highest-value user flows first (e.g. auth, then the core booking path), not bottom-up by layer.
+- **Don't build infrastructure ahead of need.** Cross-cutting/supporting pieces — repositories,
+  the global exception handler, mappers, config classes — are added **when a feature actually
+  needs them**, as part of that feature's slice, not as separate upfront phases. Add exactly the
+  repository methods / exception types the current slice requires, and grow them later.
 
 ## Protect existing behavior (no regressions)
 

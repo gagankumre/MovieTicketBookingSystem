@@ -16,6 +16,12 @@ spring:
         jdbc:
           time_zone: UTC
 
+app:
+  jwt:
+    # HS256 signing secret (>= 32 bytes). Override in real environments via APP_JWT_SECRET.
+    secret: ${APP_JWT_SECRET:change-me-dev-secret-please-override-with-32B-minimum-value}
+    expiration-minutes: ${APP_JWT_EXPIRATION_MINUTES:60}
+
 logging:
   level:
     com.example.movieticket: INFO

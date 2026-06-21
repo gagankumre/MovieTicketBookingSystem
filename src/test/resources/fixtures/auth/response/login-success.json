@@ -1,0 +1,5 @@
+{
+  "token": "ignored",
+  "tokenType": "Bearer",
+  "expiresInMinutes": 60
+}

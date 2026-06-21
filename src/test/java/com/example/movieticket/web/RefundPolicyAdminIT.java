@@ -26,7 +26,8 @@ class RefundPolicyAdminIT extends AbstractApiIT {
         mockMvc.perform(post("/api/admin/refund-policies")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(JsonFixtures.read("refundpolicy/request/create-policy.json")))
+                        .content(JsonFixtures.read("refundpolicy/request/create-policy.json",
+                                java.util.Map.of("hoursBeforeShow", 48, "refundPercent", 100))))
                 .andExpect(status().isCreated());
     }
 
@@ -35,7 +36,8 @@ class RefundPolicyAdminIT extends AbstractApiIT {
         String response = mockMvc.perform(post("/api/admin/refund-policies")
                         .header("Authorization", "Bearer " + adminToken())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(JsonFixtures.read("refundpolicy/request/create-policy.json")))
+                        .content(JsonFixtures.read("refundpolicy/request/create-policy.json",
+                                java.util.Map.of("hoursBeforeShow", 48, "refundPercent", 100))))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
 
@@ -50,7 +52,8 @@ class RefundPolicyAdminIT extends AbstractApiIT {
         mockMvc.perform(post("/api/admin/refund-policies")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(JsonFixtures.read("refundpolicy/request/create-policy.json")))
+                        .content(JsonFixtures.read("refundpolicy/request/create-policy.json",
+                                java.util.Map.of("hoursBeforeShow", 48, "refundPercent", 100))))
                 .andExpect(status().isConflict());
     }
 
@@ -59,7 +62,8 @@ class RefundPolicyAdminIT extends AbstractApiIT {
         mockMvc.perform(post("/api/admin/refund-policies")
                         .header("Authorization", "Bearer " + customerToken())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(JsonFixtures.read("refundpolicy/request/create-policy.json")))
+                        .content(JsonFixtures.read("refundpolicy/request/create-policy.json",
+                                java.util.Map.of("hoursBeforeShow", 48, "refundPercent", 100))))
                 .andExpect(status().isForbidden());
     }
 }

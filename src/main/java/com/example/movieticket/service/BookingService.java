@@ -3,11 +3,14 @@ package com.example.movieticket.service;
 import com.example.movieticket.domain.Booking;
 import com.example.movieticket.domain.BookingSeat;
 import com.example.movieticket.domain.Payment;
+import com.example.movieticket.domain.Refund;
 import com.example.movieticket.domain.SeatHold;
 import com.example.movieticket.domain.ShowSeat;
 import com.example.movieticket.domain.User;
+import com.example.movieticket.domain.enums.BookingStatus;
 import com.example.movieticket.domain.enums.HoldStatus;
 import com.example.movieticket.domain.enums.SeatStatus;
+import com.example.movieticket.exception.BusinessRuleException;
 import com.example.movieticket.exception.HoldExpiredException;
 import com.example.movieticket.exception.PaymentFailedException;
 import com.example.movieticket.exception.ResourceNotFoundException;
@@ -19,11 +22,13 @@ import com.example.movieticket.payment.PaymentResult;
 import com.example.movieticket.repository.BookingRepository;
 import com.example.movieticket.repository.BookingSeatRepository;
 import com.example.movieticket.repository.PaymentRepository;
+import com.example.movieticket.repository.RefundRepository;
 import com.example.movieticket.repository.SeatHoldRepository;
 import com.example.movieticket.repository.ShowSeatRepository;
 import com.example.movieticket.repository.UserRepository;
 import com.example.movieticket.web.dto.BookingResponse;
 import com.example.movieticket.web.dto.BookingSummaryResponse;
+import com.example.movieticket.web.dto.CancellationResponse;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -47,6 +52,8 @@ public class BookingService {
     private final BookingSeatRepository bookingSeatRepository;
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
+    private final RefundService refundService;
+    private final RefundRepository refundRepository;
     private final BookingMapper bookingMapper;
 
     /**
@@ -109,6 +116,49 @@ public class BookingService {
 
         log.info("Confirmed booking id={} from hold {} total={}", booking.getId(), holdId, total);
         return toResponse(booking, bookingSeats, payment);
+    }
+
+    /**
+     * Cancels a confirmed booking (owner only): releases its seats, computes the policy refund,
+     * issues a mock-gateway refund, and records it. {@code @Version} on the booking guards against
+     * a concurrent double-cancel (the loser fails with a 409).
+     */
+    @Transactional
+    public CancellationResponse cancelBooking(String userEmail, Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking", bookingId));
+        if (!booking.getUser().getEmail().equals(userEmail)) {
+            throw new UnauthorizedActionException("Booking " + bookingId + " does not belong to the current user");
+        }
+        if (booking.getStatus() != BookingStatus.CONFIRMED) {
+            throw new BusinessRuleException("Booking " + bookingId + " is not confirmed");
+        }
+
+        Instant now = Instant.now();
+        List<Long> seatIds = bookingSeatRepository.findByBookingId(bookingId).stream()
+                .map(bookingSeat -> bookingSeat.getShowSeat().getId())
+                .toList();
+        if (!seatIds.isEmpty()) {
+            seatLockManager.release(seatLockManager.lockSeats(seatIds));
+        }
+
+        BigDecimal refundAmount = refundService.computeRefund(
+                booking.getTotalAmount(), booking.getShow().getStartTime(), now);
+        Payment payment = paymentRepository.findFirstByBookingIdOrderByIdDesc(bookingId).orElse(null);
+        if (payment != null && refundAmount.signum() > 0) {
+            paymentGateway.refund(payment.getGatewayRef(), refundAmount);
+            payment.markRefunded();
+        }
+        Refund refund = refundRepository.save(new Refund(booking, refundAmount, now));
+        booking.casStatus(BookingStatus.CONFIRMED, BookingStatus.CANCELLED);
+
+        log.info("Cancelled booking {} refund={}", bookingId, refundAmount);
+        return CancellationResponse.builder()
+                .bookingId(bookingId)
+                .status(booking.getStatus().name())
+                .refundAmount(refundAmount)
+                .refundStatus(refund.getStatus().name())
+                .build();
     }
 
     @Transactional(readOnly = true)

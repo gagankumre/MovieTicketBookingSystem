@@ -1,4 +1,4 @@
 {
-  "hoursBeforeShow": 48,
-  "refundPercent": 100
+  "hoursBeforeShow": ${hoursBeforeShow},
+  "refundPercent": ${refundPercent}
 }

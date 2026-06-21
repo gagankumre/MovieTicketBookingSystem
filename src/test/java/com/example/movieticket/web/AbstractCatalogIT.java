@@ -10,6 +10,7 @@ import com.example.movieticket.repository.DiscountCodeRepository;
 import com.example.movieticket.repository.MovieRepository;
 import com.example.movieticket.repository.PaymentRepository;
 import com.example.movieticket.repository.RefundPolicyRepository;
+import com.example.movieticket.repository.RefundRepository;
 import com.example.movieticket.repository.ScreenRepository;
 import com.example.movieticket.repository.SeatHoldRepository;
 import com.example.movieticket.repository.SeatRepository;
@@ -56,11 +57,14 @@ abstract class AbstractCatalogIT extends AbstractApiIT {
     protected DiscountCodeRepository discountCodeRepository;
     @Autowired
     protected RefundPolicyRepository refundPolicyRepository;
+    @Autowired
+    protected RefundRepository refundRepository;
 
     @BeforeEach
     void resetCatalog() {
         bookingSeatRepository.deleteAll();
         paymentRepository.deleteAll();
+        refundRepository.deleteAll();
         bookingRepository.deleteAll();
         showSeatRepository.deleteAll();
         seatHoldRepository.deleteAll();

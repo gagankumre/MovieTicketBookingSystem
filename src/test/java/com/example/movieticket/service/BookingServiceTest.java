@@ -8,12 +8,16 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import com.example.movieticket.domain.Booking;
+import com.example.movieticket.domain.BookingSeat;
+import com.example.movieticket.domain.Payment;
 import com.example.movieticket.domain.SeatHold;
 import com.example.movieticket.domain.Show;
 import com.example.movieticket.domain.ShowSeat;
 import com.example.movieticket.domain.User;
+import com.example.movieticket.domain.enums.BookingStatus;
 import com.example.movieticket.domain.enums.SeatCategory;
 import com.example.movieticket.domain.enums.ShowType;
+import com.example.movieticket.exception.BusinessRuleException;
 import com.example.movieticket.exception.HoldExpiredException;
 import com.example.movieticket.exception.PaymentFailedException;
 import com.example.movieticket.exception.UnauthorizedActionException;
@@ -23,6 +27,7 @@ import com.example.movieticket.payment.PaymentResult;
 import com.example.movieticket.repository.BookingRepository;
 import com.example.movieticket.repository.BookingSeatRepository;
 import com.example.movieticket.repository.PaymentRepository;
+import com.example.movieticket.repository.RefundRepository;
 import com.example.movieticket.repository.SeatHoldRepository;
 import com.example.movieticket.repository.ShowSeatRepository;
 import com.example.movieticket.repository.UserRepository;
@@ -30,6 +35,7 @@ import com.example.movieticket.support.factory.SeatFactory;
 import com.example.movieticket.support.factory.ShowFactory;
 import com.example.movieticket.support.factory.UserFactory;
 import com.example.movieticket.web.dto.BookingResponse;
+import com.example.movieticket.web.dto.CancellationResponse;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -61,6 +67,10 @@ class BookingServiceTest {
     private PaymentRepository paymentRepository;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private RefundService refundService;
+    @Mock
+    private RefundRepository refundRepository;
 
     private BookingService bookingService;
 
@@ -73,7 +83,7 @@ class BookingServiceTest {
     void setUp() {
         bookingService = new BookingService(seatHoldRepository, showSeatRepository, seatLockManager,
                 discountService, paymentGateway, bookingRepository, bookingSeatRepository,
-                paymentRepository, userRepository, new BookingMapperImpl());
+                paymentRepository, userRepository, refundService, refundRepository, new BookingMapperImpl());
     }
 
     private SeatHold activeHold() {
@@ -152,5 +162,55 @@ class BookingServiceTest {
         assertThat(response.getStatus()).isEqualTo("CONFIRMED");
         assertThat(response.getSeats()).hasSize(2);
         assertThat(response.getPaymentReference()).isEqualTo("PAY-1");
+    }
+
+    private Booking confirmedBooking() {
+        Booking booking = new Booking(user, show, new BigDecimal("200.00"), BigDecimal.ZERO,
+                new BigDecimal("200.00"), null, Instant.parse("2026-06-20T10:00:00Z"));
+        booking.setId(7L);
+        return booking;
+    }
+
+    @Test
+    void cancelRejectsNonOwner() {
+        when(bookingRepository.findById(7L)).thenReturn(Optional.of(confirmedBooking()));
+
+        assertThatThrownBy(() -> bookingService.cancelBooking("mallory@example.com", 7L))
+                .isInstanceOf(UnauthorizedActionException.class);
+    }
+
+    @Test
+    void cancelRejectsAlreadyCancelledBooking() {
+        Booking booking = confirmedBooking();
+        booking.casStatus(BookingStatus.CONFIRMED, BookingStatus.CANCELLED);
+        when(bookingRepository.findById(7L)).thenReturn(Optional.of(booking));
+
+        assertThatThrownBy(() -> bookingService.cancelBooking("alice@example.com", 7L))
+                .isInstanceOf(BusinessRuleException.class);
+    }
+
+    @Test
+    void cancelReleasesSeatsAndRecordsRefund() {
+        Booking booking = confirmedBooking();
+        ShowSeat seat = heldSeat(101L);
+        seat.confirm(7L);
+        BookingSeat bookingSeat = new BookingSeat(booking, seat, new BigDecimal("200.00"));
+        Payment payment = new Payment(booking, new BigDecimal("200.00"), "CARD");
+        payment.markSuccess("PAY-1");
+
+        when(bookingRepository.findById(7L)).thenReturn(Optional.of(booking));
+        when(bookingSeatRepository.findByBookingId(7L)).thenReturn(List.of(bookingSeat));
+        when(seatLockManager.lockSeats(any())).thenReturn(List.of(seat));
+        when(refundService.computeRefund(eq(new BigDecimal("200.00")), any(), any()))
+                .thenReturn(new BigDecimal("200.00"));
+        when(paymentRepository.findFirstByBookingIdOrderByIdDesc(7L)).thenReturn(Optional.of(payment));
+        when(refundRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        CancellationResponse response = bookingService.cancelBooking("alice@example.com", 7L);
+
+        assertThat(response.getStatus()).isEqualTo("CANCELLED");
+        assertThat(response.getRefundAmount()).isEqualByComparingTo("200.00");
+        assertThat(booking.getStatus()).isEqualTo(BookingStatus.CANCELLED);
+        assertThat(payment.getStatus().name()).isEqualTo("REFUNDED");
     }
 }

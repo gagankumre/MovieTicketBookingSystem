@@ -5,6 +5,7 @@ import com.example.movieticket.service.HoldService;
 import com.example.movieticket.web.dto.BookingRequest;
 import com.example.movieticket.web.dto.BookingResponse;
 import com.example.movieticket.web.dto.BookingSummaryResponse;
+import com.example.movieticket.web.dto.CancellationResponse;
 import com.example.movieticket.web.dto.HoldRequest;
 import com.example.movieticket.web.dto.HoldResponse;
 import jakarta.validation.Valid;
@@ -60,5 +61,10 @@ public class BookingController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void releaseHold(@AuthenticationPrincipal String email, @PathVariable Long holdId) {
         holdService.releaseHold(email, holdId);
+    }
+
+    @PostMapping("/bookings/{bookingId}/cancel")
+    public CancellationResponse cancelBooking(@AuthenticationPrincipal String email, @PathVariable Long bookingId) {
+        return bookingService.cancelBooking(email, bookingId);
     }
 }
